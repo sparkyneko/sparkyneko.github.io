@@ -173,7 +173,7 @@ p {
    };
 
    function loadTab(id) {
-     if (~document.location.href.indexOf('#')) {
+     if (~document.location.href.indexOf('#') && !id) {
        id = document.location.href.split('#')[1];
      }
      console.log("loading tab with id: " + id);
