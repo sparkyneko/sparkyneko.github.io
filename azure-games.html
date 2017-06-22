@@ -173,14 +173,16 @@ p {
    };
 
    function loadTab(id) {
-     if (~document.location.href.indexOf('#') && !id) {
-       id = document.location.href.split('#')[1];
+     var chunks = document.location.href.split('#');
+     if (chunks.length > 1 && !id) {
+       id = chunks[1];
      }
      console.log("loading tab with id: " + id);
      if (!data[id] && id !== "ladder") {
         document.getElementById('title').innerHTML = "";
         document.getElementById('desc').innerHTML = defaultDisplay.map(bit => '<p>' + bit + '</p>').join('');
      } else {
+         document.location.href = chunks[0] + '#' + id;
         if (id === "ladder") {
           buildTable();
           return;
