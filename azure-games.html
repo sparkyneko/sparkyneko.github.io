@@ -179,7 +179,7 @@ p {
      }
      console.log("loading tab with id: " + id);
      if (!data[id] && id !== "ladder") {
-        document.location.href = chunks[0];
+        document.location.href = chunks[0] + '#home';
         document.getElementById('title').innerHTML = "";
         document.getElementById('desc').innerHTML = defaultDisplay.map(bit => '<p>' + bit + '</p>').join('');
      } else {
