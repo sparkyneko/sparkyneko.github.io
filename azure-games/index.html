@@ -173,6 +173,10 @@ p {
    };
 
    function loadTab(id) {
+     if (~document.location.href.indexOf('#')) {
+       id = document.location.href.split('#')[1];
+     }
+     console.log("loading tab with id: " + id);
      if (!data[id] && id !== "ladder") {
         document.getElementById('title').innerHTML = "";
         document.getElementById('desc').innerHTML = defaultDisplay.map(bit => '<p>' + bit + '</p>').join('');
@@ -188,6 +192,8 @@ p {
    }
 
    var placementData = [
+     {name: "The Alliance Empire", gold: 1, silver: 2},
+     {name: "Lobby", gold: 2, silver: 1, bronze: 5},
    ];
    function buildTable() {
      function generateTable() {
