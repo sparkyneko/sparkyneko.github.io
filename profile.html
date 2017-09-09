@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Profile Modifier</title>
+    <script>
+      var css = '';
+      var timer;
+      function escapeHTML (str) {
+          return ('' + str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/\//g, '&#x2f;');
+      }
+      function copyCSS() {
+          clearTimeout(timer);
+          var aux = document.createElement("input");
+          aux.setAttribute("value", css);
+          document.body.appendChild(aux);
+          aux.select();
+          document.execCommand("copy");
+
+          document.body.removeChild(aux);
+          document.getElementById('copy_info').innerHTML = 'Copied!';
+          timer = setTimeout(() => {
+              document.getElementById('copy_info').innerHTML = '';
+          }, 2250);
+      }
+      function updateCSS (noChange) {
+        var name = document.getElementById('name').value;
+        var background_image = document.getElementById('background_image').value;
+        var background_repeat = document.getElementById('background_repeat').value;
+        var background_position = document.getElementById('background_position').value;
+        var background_size = document.getElementById('background_size').value;
+        var avatar = document.getElementById('avatar').value;
+        var color = document.getElementById('color').value;
+        var name_color = document.getElementById('name_color').value;
+
+        css = document.getElementById('css_code').value || '';
+        if (!noChange) {
+          // remove the prev style elements in the css
+          css = css.replace(/\n/g, ' ').replace(/([; ]|^)(?:background-image|background-repeat|background-position|background-size|color):.+?(;|$)/gi, '').replace(/[\s]{2,}|^;/g, '').trim();
+          if (css.length && !/;$/.test(css)) css += "; "; // add semicolon and space
+          else css += ' '; // otherwise add a simple space
+
+          // add in the new style elements
+          if (background_image) css += `background-image: url('${background_image}'); `
+          if (background_repeat) css += `background-repeat: ${background_repeat}; `
+          if (background_position) css += `background-position: ${background_position}; `
+          if (background_size) css += `background-size: ${background_size}; `
+          if (color) css += `color: ${color}`;
+          document.getElementById('css_code').value = css;
+        }
+
+        var html = `<div class="infobox"><div style="${css}"><table style="padding: 3px;"><tr><td width=3%><button style="border:none;background:none;padding:0;float:left;" name="parseCommand" value="/user ${name}"><img src="${avatar}" height="80" width="80" align="left"></button><div style="float: left; text-align: center; border-radius: 12px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2) inset; margin: 2px 2px 2px 0px" class="card-button"> <table style="border:none;background:none;padding:0;"> <tr><td><button style="border:none;background:none;padding:0;" name="send" value="/badges info staff"><img src="http://www.smogon.com/media/forums/images/badges/simmod.png.v.rvE-dDXmMF7laCoO4y4QvA" height="16" width="16" alt="staff" title="staff" ></button></td><td><button style="border:none;background:none;padding:0;" name="send" value="/badges info The Orator"><img src="http://i.imgur.com/bjVC9Nv.png" height="16" width="16" alt="The Orator" title="The Orator" ></button></td></tr> </table></div></td><td><b><font color="#24678d">Name:</font></b>&nbsp;<b><font color="${name_color}">${name}</font></b>  <img src="https://github.com/kevogod/cachechu/blob/master/flags/ca.png?raw=true" height=10 title="CA"><br><b><font color="#24678d">Group:</font></b>&nbsp;Furry<br><b><font color="#24678d">Money:</font></b>&nbsp;3 bucks<br><b><font color="#24678d">Gang:</font></b>&nbsp;Furry Gang&nbsp;(Godfather)<br>&nbsp;<br><b><font color="#24678d">Level:</font></b>&nbsp;20<br><b><font color="#24678d">Nature:</font></b>&nbsp;Naive. <b><font color="#24678d">Personality:</font></b>&nbsp;Impetuous and silly<br><br><audio style="width: cover;"src="https:&#x2f;&#x2f;the-sisterhood.github.io&#x2f;files&#x2f;foxie-nocturne.mp3" controls=""></audio></td><td width=1%><div style="display: inline-block; position: relative; height:80px; width: 80px; background-image: url('http://pokemonshowdown.com/sprites/xyani/fennekin.gif'); background-repeat: no-repeat; background-size: contain; background-position: center"><div style="position: absolute; bottom: -5px; right: -5px; color: transparent; text-shadow: none;">fennekin</div></div></td></tr></table></div><br clear="all"></div>`;
+
+        document.getElementById('html_display').innerHTML = html;
+      }
+      function updateDisabled() {
+        var isDisabled = document.getElementById('disabled').checked || document.getElementById('css_editing').checked;
+        document.getElementById('background_size').disabled = isDisabled;
+        document.getElementById('background_position').disabled = isDisabled;
+        document.getElementById('background_repeat').disabled = isDisabled;
+      }
+      function updateCSSDisabled() {
+        var allowEditing = document.getElementById('css_editing').checked;
+        if (allowEditing) {
+            document.getElementById('background_repeat').disabled = true;
+            document.getElementById('background_position').disabled = true;
+            document.getElementById('background_size').disabled = true;
+          document.getElementById('color').disabled = true;
+          document.getElementById('background_image').disabled = true;
+
+          document.getElementById('css_code').disabled = false;
+        } else {
+          if (!document.getElementById('disabled').checked) {
+            document.getElementById('background_repeat').disabled = false;
+            document.getElementById('background_position').disabled = false;
+            document.getElementById('background_size').disabled = false;
+          }
+          document.getElementById('color').disabled = false;
+          document.getElementById('background_image').disabled = false;
+
+
+          document.getElementById('css_code').disabled = true;
+        }
+      }
+      function updateCSSBox() {
+        var contents = document.getElementById('css_code').value;
+        var properties = ['background-image', 'background-repeat', 'background-position', 'background-size', 'color'];
+
+        for (var p of properties) {
+          var regexContents = `([; ]|^)${p}:[^;]+?(?=;|$)`;
+          var regex = new RegExp(regexContents, 'i');
+
+          p = p.replace('-', '_');
+
+          var match = contents.match(regex);
+          if (!match) {
+            document.getElementById(p).value = '';
+          } else {
+            match = match[0];
+            match = match.split(':');
+            var value = match.slice(1).join(':').trim();
+            if (value.startsWith('url(')) {
+              value = value.replace(/(^url[\W_]+|[\W_]+$)/g, '');
+            }
+            document.getElementById(p).value = value;
+          }
+        }
+        updateCSS(true);
+      }
+    </script>
+    <style>
+      body {
+        font-family: Verdana;
+        font-size: 9pt;
+        text-align: center;
+      }
+      .infobox {
+          background:rgba(245,245,245,0.4);
+          border: solid 1px #76bee3;
+          padding: 8px;
+      }
+
+      .rounded {
+        border-radius: 10px;
+      }
+      h3 {
+        margin-bottom: 2px;
+        text-align: left;
+      }
+      table {
+        text-align: left !important;
+      }
+      td {
+        vertical-align: top;
+      }
+      input[type="text"] {
+          width: 300px;
+      }
+      .wide-input {
+          position: absolute;
+          top: 0px;
+          height: 92.5%;
+          width: 100%;
+          margin-top: 0px;
+          background:rgba(245,245,245,0.4);
+          border: solid 1px #76bee3;
+          padding: 8px;
+      }
+      input:disabled, textarea:disabled {
+        color: gray;
+        background-color: rgba(0,0,0,0.05);
+      }
+    </style>
+  </head>
+
+  <body onload="updateCSS()">
+    <div class="infobox rounded" style="color: blue; font-size: 24px; text-align: center;">
+      <em>
+        Profile CSS Tester
+      </em>
+    </div>
+    <table style="width: 98%">
+      <tr>
+        <td style="width: 50%;">
+          <h3>Information</h3>
+        </td>
+        <td style="width: 50%; position: relative">
+          <h3 style="display: inline-block">CSS</h3>
+          &nbsp;&nbsp;<input type=checkbox id="css_editing" onchange="updateCSSDisabled()">Allow direct CSS editing
+        </td>
+      </tr>
+      <tr>
+        <td class="infobox rounded" id="form_cell">
+            <u><strong>Image/color Customization:</strong></u><br />
+            Text Color: <input type="text" id="color" value="#000000" oninput="updateCSS()"><br />
+            Background Image: <input type="text" id="background_image" value="http://cdn.pcwallart.com/images/green-grass-field-wallpaper-3.jpg" oninput="updateCSS()"><br />
+            <br />
+
+            <u><strong>User Info:</strong></u><br />
+            Name: <input type="text" id="name" value="sparkychild" oninput="updateCSS()"><br />
+            Name Color: <input type="text" id="name_color" value="#BF42DF" oninput="updateCSS()"><br />
+            Avatar: <input type="text" id="avatar" value="https://i.imgur.com/BUrUDLx.png" oninput="updateCSS()"><br />
+            <br />
+
+            <u><strong>Advanced CSS Customization:</strong></u>&nbsp;&nbsp;(<input id="disabled" type="checkbox" checked=true onchange="updateDisabled()">disabled)<br />
+            Background Position: <input type="text" id="background_position" value="center center" oninput="updateCSS()" disabled><br />
+            Background Size: <input type="text" id="background_size" value="cover" oninput="updateCSS()" disabled><br />
+            Background Repeat: <input type="text" id="background_repeat" value="no-repeat" oninput="updateCSS()" disabled>
+          </div>
+        </td>
+        <td style="position: relative">
+            <textarea type=text class="wide-input rounded" id="css_code" disabled oninput="updateCSSBox()"></textarea>
+        </td>
+      </tr>
+    </table>
+    <div style="text-align: right"><div id="copy_info" style="display: inline-block"></div>&nbsp;&nbsp;<button onclick='copyCSS()' style="font-size: 12pt; padding: 5px; border-radius: 3px; background-color: yellow; border: 1px solid blue;">Copy CSS!</button></div>
+    <h3>Display</h3>
+    <div id="html_display"></div>
+
+  </body>
+</html>
