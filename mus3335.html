@@ -34,16 +34,20 @@
       border-radius: 2px;
       font-weight: bold;
       color: blue;
-      border: 2px blue solid;
+      border-bottom: 2px blue solid;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-size: 12pt;
     }
     .wrong {
       color: red !important;
-      border: 2px red solid !important;
+      border-color: red !important;
       background: rgba(255, 0, 0, 0.2) !important;
     }
     .correct {
       color: green !important;
-      border: 2px green solid !important;
+      border-color: green !important;
       background: rgba(0, 255, 0, 0.2) !important;
     }
   </style>
@@ -142,7 +146,7 @@
         }
 
         // this becomes a blank!
-        return `<input type="text" size="${value.length + 2}" id="${currentnumber}" class="${className}" value="${value}" disabled></input>`;
+        return `<input type="text" size="${value.length + 1}" id="${currentnumber}" class="${className}" value="${value}" disabled></input>`;
       } else {
         return answers[0];
       }
