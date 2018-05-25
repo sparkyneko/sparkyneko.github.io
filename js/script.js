@@ -307,7 +307,9 @@ class FORMULA {
 
             // determine if there are any repeated stats that are positive;
             let positive_repeats = repeated_stats.filter(s => s.value > 0);
-            if (positive_repeats.length) {
+            let negs = this.final_stats.filter(s => s.value < 0);
+
+            if (positive_repeats.length && negs.length) {
                 // sort decending order of potential requirement
                 positive_repeats = positive_repeats.sort((a, b) => b.data.pot * (b.data.cat === this.weap_arm ? 2 : 1) - a.data.pot * (a.data.cat === this.weap_arm ? 2 : 1));
                 let remain_pot = 0;
@@ -339,7 +341,7 @@ class FORMULA {
 
                     let available = (this.potential - remain_pot - leave_behind - 1) || 1; // always leave one remaining!
                     let steps = Math.floor(available / s.data.pot);
-                    if (steps > s.data.maxSteps) steps = s.data.maxSteps;
+                    if (steps > s.value) steps = s.value;
 
                     if (!curr_pr_stat_id) {
                         // stat em all if they're the first one
@@ -359,7 +361,6 @@ class FORMULA {
                 }
 
                 let slotsLeft = this.stats.filter(s => !s).length; // empty slots
-                let negs = this.final_stats.filter(s => s.value < 0);
 
                 if (curr_pr_stat_id < positive_repeats.length - 1) {
                     // there are still positives left - add the negs now along with the last positive
@@ -397,7 +398,6 @@ class FORMULA {
                     }
                 }
             } else {
-                let negs = this.final_stats.filter(s => s.value < 0);
                 this.applyStat(...negs.map(this.statToArray));
             }
 
@@ -436,6 +436,7 @@ function update_stats(slot_num) {
   else {
     document.getElementById('slot' + slot_num + '_value').disabled = true;
     document.getElementById('slot' + slot_num + '_value').value = '';
+    Simulator.stats[slot_num] = null;
   }
   if (Simulator.getStatData(dropdown_value).cat === "Awaken Elements") {
     document.getElementById('slot' + slot_num + '_value').disabled = true;
@@ -487,7 +488,7 @@ function get_results() {
 function show_details(pot) {
   if (!Simulator.results[pot]) return;
   let formula = Simulator.results[pot];
-  let buffer = `<table><tr><td style="width: 15%; color: green; font-weight: bold; text-align: left">POT ${pot}</td><td style="width: 70%"></td><td style="width:15%; color: green; font-weight: bold; text-align: right">${formula.success.toFixed(2)}%</td></tr>`;
+  let buffer = `<table style="width:100%"><tr><td style="width: 15%; color: green; font-weight: bold; text-align: left">POT ${pot}</td><td style="width: 70%"></td><td style="width:15%; color: green; font-weight: bold; text-align: right">${formula.success.toFixed(2)}%</td></tr>`;
   buffer += `<tr><th>Step</th><th>Change</th><th>Pot</th></tr>`;
 
   let s = 0;
@@ -495,7 +496,13 @@ function show_details(pot) {
     buffer += `<tr><td>${++s}</td><td>${step[0]}</td><td style="text-align: right">${step[1]}</td></tr>`
   }
 
-  buffer += '</table>'
+  buffer += '</table><br /><h3 style="text-align: center">Materials Used</h3><table style="width:100%"><tr><th style="width:75%">Materials</th><th>Pts.</th></tr>'
+
+  for (let m in formula.mats) {
+    buffer += `<tr><td>${m}</td><td>${formula.mats[m]}</td></tr>`;
+  }
+
+  buffer += '</table>';
 
   document.getElementById('details').innerHTML = buffer;
 }
