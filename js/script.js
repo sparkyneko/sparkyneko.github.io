@@ -325,7 +325,7 @@ class FORMULA {
             mock_stats.push(s);
             let pen = this.determinePenalty(mock_stats);
             if (s.data.pot === 1) pos_potential += 1;
-            else pos_potential += s.data.pot * s.value * pen;
+            else pos_potential += this.absolutePot(s) * pen;
           }
           if (pos_potential < this.potential && non_repeat_positive.length) {
             // since it wont use up all the potential before statting negatives, we will bring
@@ -348,8 +348,9 @@ class FORMULA {
           for (let s of stat_positives) {
             mock_stats.push(s);
             let pen = this.determinePenalty(mock_stats);
+            let borrowed_stat = s.data.type !== this.weap_arm && ['a', 'w'].includes(s.data.type);
             if (s.data.pot === 1) remain_pot += 1;
-            else remain_pot += s.data.pot * pen;
+            else remain_pot += s.data.pot * pen * (borrowed_stat ? 2 : 1);
           }
 
           let first_loop = true;
