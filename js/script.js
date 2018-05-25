@@ -496,6 +496,7 @@ function get_results() {
   }
 
   document.getElementById('results').innerHTML = '<table style="width:100%"><tr><th style="text-align: left">Potential</th><th style="text-align: right">Success Rate</th></tr>' + buffer.join('') + '</table>';
+  show_details(result_keys[0]);
 }
 
 function show_details(pot) {
@@ -557,5 +558,6 @@ function sync_ui_with_sim () {
 
     document.getElementById('slot' + i).value = reverse_options_to_index(s.name);
     document.getElementById('slot' + i + '_value').value = s.value;
+    document.getElementById('slot' + i + '_value').disabled = false;
   }
 }
