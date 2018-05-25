@@ -390,7 +390,7 @@ class FORMULA {
             }
             if (steps * pot_per_step >= this.potential + remain_pot) steps--; // always leave 1 point left
             if (steps > s.value) steps = s.value;
-            if (first_loop) {
+            if (pen === 1) {
               // the first one always is done in one chunk, as it will never be affected by potential.
               this.applyStat([s.id, s.data, steps]);
             } else {
