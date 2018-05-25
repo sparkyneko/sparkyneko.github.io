@@ -361,9 +361,11 @@ class FORMULA {
               break; // leave it in the positives to be statted and move on to the negs
             }
 
+            let borrowed_stat = s.data.type !== this.weap_arm && ['a', 'w'].includes(s.data.type);
 
             remain_pot -= s.data.pot * pen; // remove from remain_pot
-            let pot_per_step = Math.floor(pen * s.data.pot);
+            if (remain_pot < 0) remain_pot = 0;
+            let pot_per_step = Math.floor(pen * s.data.pot * (borrowed_stat ? 2 : 1));
 
             // if there's one stat left after and it uses a penalty, dont leave any potential for it
             if (stat_positives.length === 1) {
