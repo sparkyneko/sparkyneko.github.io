@@ -135,20 +135,20 @@ class SIMULATOR {
         this.stats[slot_num] = {name: data.name, value: new_value, data};
     }
 
-    run() {
+    run(custom_pot) {
         let stats = this.stats.filter(stats => stats && stats.value);
 
-        let pot = 1;
+        let pot = custom_pot || 1;
         this.results = {}; // clean results!
         while (pot < 1000) {
             let formula = new FORMULA(this, pot, this.recipe_pot, this.weap_arm, stats);
             formula.run();
 
-            if (formula.success) {
-                if (formula.success === 100) pot = pot + '+';
+            if (formula.success || custom_pot) {
+                if (formula.success === 100 && !custom_pot) pot = pot + '+';
                 this.results[pot] = formula;
             }
-            if (formula.success === 100) break;
+            if (formula.success === 100 || custom_pot) break;
             pot++;
         }
     }
@@ -550,7 +550,7 @@ function update_stats(slot_num) {
     document.getElementById('slot' + slot_num + '_value').value = '1';
   }
   let input_value = parseInt(document.getElementById('slot' + slot_num + '_value').value);
-  if (input_value) {
+  if (!isNaN(input_value)) {
     Simulator.setStat(slot_num, dropdown_value, input_value);
     let max_value = Simulator.stats[slot_num].data.maxSteps;
     if (max_value < Math.abs(input_value)) {
@@ -581,8 +581,8 @@ function build_menu(initialize) {
   show_formulas();
 }
 
-function get_results() {
-  Simulator.run();
+function get_results(custom_pot) {
+  Simulator.run(custom_pot);
   let result_keys = Object.keys(Simulator.results).reverse();
   let buffer = []
   for (let pot of result_keys) {
@@ -655,4 +655,13 @@ function sync_ui_with_sim () {
     document.getElementById('slot' + i + '_value').value = s.value;
     document.getElementById('slot' + i + '_value').disabled = false;
   }
+}
+
+function prompt_potential() {
+  let pot = prompt('Please enter the amount of potential to create a statting recipe for.');
+  if (!pot) return;
+
+  pot = parseInt(pot);
+  if (!pot || pot < 1) return alert('Please enter a valid positive number.');
+  get_results(pot);
 }
