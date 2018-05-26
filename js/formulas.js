@@ -57,6 +57,17 @@ var Formulas = [
   {
     weap_arm: 'a',
     stats: [
+      ['Critical Damage %', 7],
+      ['Critical Rate', 15],
+      ['Critical Rate %', 15],
+      ['Critical Damage', 15],
+      ['MATK %', -7],
+      ['Aggro %', -10, 1],
+    ],
+  },
+  {
+    weap_arm: 'a',
+    stats: [
       ['MATK %', 7],
       ['INT %', 7],
       ['Accuracy', -7],
@@ -85,6 +96,17 @@ var Formulas = [
       ['MATK %', -7],
       ['Magic Pierce %', -3],
       ['Accuracy', -7],
+    ],
+  },
+  {
+    weap_arm: 'a',
+    stats: [
+      ['MaxHP %', 7],
+      ['VIT %', 7],
+      ['Aggro %', 10, ],
+      ['Accuracy', -7],
+      ['ATK %', -7],
+      ['MATK %', -7],
     ],
   },
 ];
