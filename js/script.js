@@ -279,6 +279,52 @@ class FORMULA {
       return abs_pot;
     }
 
+    getSum(original, max_params, sum, a, ...dividends) {
+        let a_count = 1;
+        while (a_count * a < sum) {
+            let a_total = a_count * a;
+            let remainder = sum - a_total;
+            if (dividends.length === 1) {
+                // treat that as b
+                let b = dividends[0];
+                let b_count = Math.floor(remainder / b);
+                if (b_count * b !== remainder) {
+                    a_count++;
+                    continue;
+                }
+                let solution = [a_count, b_count];
+                if (original) {
+                    // make sure the multiples are within the max values requested
+                    let difference = max_params.map((m, i) => m - solution[i]);
+                    if (difference.some(n => n < 0)) {
+                        a_count++;
+                        continue;
+                    }
+                }
+                return solution;
+            } else {
+                let results = this.getSum(false, remainder, ...dividends);
+                if (!results) {
+                    a_count++;
+                    continue;
+                }
+                let solution = [a_count, ...results];
+                if (original) {
+                    // make sure the multiples are within the max values requested
+                    let difference = max_params.map((m, i) => m - solution[i]);
+                    if (difference.some(n => n < 0)) {
+                        a_count++;
+                        continue;
+                    }
+                }
+                return solution;
+            }
+            a_count++;
+        }
+
+        return null;
+    }
+
     run() {
         /**
          * STEPS:
@@ -353,52 +399,100 @@ class FORMULA {
             else remain_pot += s.data.pot * pen * (borrowed_stat ? 2 : 1);
           }
 
-          let first_loop = true;
-          while (stat_positives.length) {
-            let s = stat_positives.shift();
-            let pen = this.determinePenalty([s, ...this.stats]);
-            if (Math.floor(s.data.pot * pen) >= this.potential) {
-              stat_positives.unshift(s);
-              break; // leave it in the positives to be statted and move on to the negs
+          let non_onesies_positives = stat_positives.filter(s => s.data.pot > 1);
+          let onesies_positives = stat_positives.filter(s => s.data.pot === 1);
+          let onesies_success = false;
+          if (non_onesies_positives.length > 1 && onesies_positives.length) {
+            console.log('trying onesies');
+            let sum = this.potential - (1 + onesies_positives.length);
+            // now make the potentials of the other 2 work out to as close to the sum as possible.
+            // the most feasible algorithm is to start the first one at 1, and keep going up, keeping
+            // record of whichever one comes closest to the sum, or meets the sum.
+            // If there are multiple solutions, we will use the one that uses the most from the BIGGEST
+            // denominator.
+            mock_stats = [];
+            let non_onesies_pot = [];
+            for (let s of non_onesies_positives) {
+              mock_stats.push(s);
+              let pen = this.determinePenalty(mock_stats);
+              let borrowed_stat = s.data.type !== this.weap_arm && ['a', 'w'].includes(s.data.type);
+
+              non_onesies_pot.push(Math.floor(s.data.pot * pen * (borrowed_stat ? 2 : 1)));
             }
-
-            let borrowed_stat = s.data.type !== this.weap_arm && ['a', 'w'].includes(s.data.type);
-
-            remain_pot -= s.data.pot * pen; // remove from remain_pot
-            if (remain_pot < 0) remain_pot = 0;
-            let pot_per_step = Math.floor(pen * s.data.pot * (borrowed_stat ? 2 : 1));
-
-            // if there's one stat left after and it uses a penalty, dont leave any potential for it
-            if (stat_positives.length === 1) {
-              let s1 = stat_positives[0];
-              if (Math.floor(this.determinePenalty([s, s1, ...this.stats]) * s1.data.pot) !== s1.data.pot) {
-                // if it incurs a penalty anyways -
-                // stat as much of the current one as possible and treat the next one with the negs
-                remain_pot = 0;
+            let results = this.getSum(true, non_onesies_positives.map(s => s.value).reverse(), sum, ...non_onesies_pot.reverse());
+            console.log(true, non_onesies_positives.map(s => s.value).reverse(), sum, ...non_onesies_pot.reverse());
+            if (results) {
+              console.log(results);
+              results = results.reverse();
+              onesies_success = true;
+              // console.log(results);
+              for (let i = 0; i < non_onesies_positives.length; i++) {
+                let s = non_onesies_positives[i];
+                let steps = results[i];
+                let pen = this.determinePenalty([s, ...this.stats]);
+                if (pen === 1) {
+                  this.applyStat([s.id, s.data, steps]);
+                } else {
+                  // the ones after will be done 1 step at a time for a total number of steps.
+                  for (let i = 0; i < steps; i++) this.applyStat([s.id, s.data, 1, true]);
+                }
               }
-            }
+              // add one step to each of the onesies
+              for (let s of onesies_positives) {
+                this.applyStat([s.id, s.data, 1, true]);
+              }
 
-            let available_pot = this.potential - remain_pot;
-            let steps;
-
-            if (s.data.pot === 1) {
-              // these just need one point - there are no penalties for these even if done after the negs.
-              steps = 1
-            } else {
-              // max number of steps possible with available potential.
-              steps = Math.floor(available_pot / pot_per_step);
+              stat_positives = [];
             }
-            if (steps * pot_per_step >= this.potential + remain_pot) steps--; // always leave 1 point left
-            if (steps > s.value) steps = s.value;
-            if (pen === 1) {
-              // the first one always is done in one chunk, as it will never be affected by potential.
-              this.applyStat([s.id, s.data, steps]);
-            } else {
-              // the ones after will be done 1 step at a time for a total number of steps.
-              for (let i = 0; i < steps; i++) this.applyStat([s.id, s.data, 1, true]);
-            }
+          }
+          if (!onesies_success) {
+            let first_loop = true;
+            while (stat_positives.length) {
+              let s = stat_positives.shift();
+              let pen = this.determinePenalty([s, ...this.stats]);
+              if (Math.floor(s.data.pot * pen) >= this.potential) {
+                stat_positives.unshift(s);
+                break; // leave it in the positives to be statted and move on to the negs
+              }
 
-            first_loop = false;
+              let borrowed_stat = s.data.type !== this.weap_arm && ['a', 'w'].includes(s.data.type);
+
+              remain_pot -= s.data.pot * pen; // remove from remain_pot
+              if (remain_pot < 0) remain_pot = 0;
+              let pot_per_step = Math.floor(pen * s.data.pot * (borrowed_stat ? 2 : 1));
+
+              // if there's one stat left after and it uses a penalty, dont leave any potential for it
+              if (stat_positives.length === 1) {
+                let s1 = stat_positives[0];
+                if (Math.floor(this.determinePenalty([s, s1, ...this.stats]) * s1.data.pot) !== s1.data.pot) {
+                  // if it incurs a penalty anyways -
+                  // stat as much of the current one as possible and treat the next one with the negs
+                  remain_pot = 0;
+                }
+              }
+
+              let available_pot = this.potential - remain_pot;
+              let steps;
+
+              if (s.data.pot === 1) {
+                // these just need one point - there are no penalties for these even if done after the negs.
+                steps = 1
+              } else {
+                // max number of steps possible with available potential.
+                steps = Math.floor(available_pot / pot_per_step);
+              }
+              if (steps * pot_per_step >= this.potential + remain_pot) steps--; // always leave 1 point left
+              if (steps > s.value) steps = s.value;
+              if (pen === 1) {
+                // the first one always is done in one chunk, as it will never be affected by potential.
+                this.applyStat([s.id, s.data, steps]);
+              } else {
+                // the ones after will be done 1 step at a time for a total number of steps.
+                for (let i = 0; i < steps; i++) this.applyStat([s.id, s.data, 1, true]);
+              }
+
+              first_loop = false;
+            }
           }
         }
         // check if one neg has to be left out
