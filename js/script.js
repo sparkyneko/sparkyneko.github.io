@@ -471,7 +471,7 @@ class FORMULA {
               let available_pot = this.potential - remain_pot;
               let steps;
 
-              if (s.data.pot === 1 || (stat_negs_seperate && !stat_positives.lengths)) {
+              if (s.data.pot === 1 || (stat_negs_seperate && !stat_positives.length)) {
                 // these just need one point - there are no penalties for these even if done after the negs.
                 steps = 1;
               } else {
