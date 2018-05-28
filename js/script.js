@@ -377,7 +377,7 @@ class FORMULA {
           if (pos_potential < this.potential && non_repeat_positive.length) {
             // since it wont use up all the potential before statting negatives, we will bring
             // in some non-repeated positives so they can escape penalty after the negatives.
-            while (pos_potential < this.potential && non_repeat_positive.length) {
+            while (pos_potential < this.potential && non_repeat_positive.length && positive_repeats.length + negs.length !== SLOTS - 1) {
               let new_add = non_repeat_positive.shift(); // take the first one in queue.
               if (new_add.data.pot === 1) continue; // this doesn't matter - it'll still be one pot per step after.
               pos_potential += this.absolutePot(new_add);
