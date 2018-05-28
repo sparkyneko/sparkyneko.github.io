@@ -1,6 +1,7 @@
 "use strict";
 
 const MAX_STEPS = 15; // max is fill +15
+const SLOTS = 6; // max number of slots is 6
 
 const OPTIONS = [
     { "name": "STR", "mat": "Beast", "pot": 5, "cost": 25, "cat": "Enhance Stats", "type": "u" },
@@ -403,7 +404,6 @@ class FORMULA {
           let onesies_positives = stat_positives.filter(s => s.data.pot === 1);
           let onesies_success = false;
           if (non_onesies_positives.length > 1 && onesies_positives.length) {
-            console.log('trying onesies');
             let sum = this.potential - (1 + onesies_positives.length);
             // now make the potentials of the other 2 work out to as close to the sum as possible.
             // the most feasible algorithm is to start the first one at 1, and keep going up, keeping
@@ -420,12 +420,9 @@ class FORMULA {
               non_onesies_pot.push(Math.floor(s.data.pot * pen * (borrowed_stat ? 2 : 1)));
             }
             let results = this.getSum(true, non_onesies_positives.map(s => s.value).reverse(), sum, ...non_onesies_pot.reverse());
-            console.log(true, non_onesies_positives.map(s => s.value).reverse(), sum, ...non_onesies_pot.reverse());
             if (results) {
-              console.log(results);
               results = results.reverse();
               onesies_success = true;
-              // console.log(results);
               for (let i = 0; i < non_onesies_positives.length; i++) {
                 let s = non_onesies_positives[i];
                 let steps = results[i];
@@ -445,6 +442,7 @@ class FORMULA {
               stat_positives = [];
             }
           }
+          let stat_negs_seperate = stat_positives.length + negs.length === SLOTS;
           if (!onesies_success) {
             let first_loop = true;
             while (stat_positives.length) {
@@ -456,13 +454,12 @@ class FORMULA {
               }
 
               let borrowed_stat = s.data.type !== this.weap_arm && ['a', 'w'].includes(s.data.type);
-
-              remain_pot -= s.data.pot * pen; // remove from remain_pot
+              remain_pot -= s.data.pot * pen * (borrowed_stat ? 2 : 1); // remove from remain_pot
               if (remain_pot < 0) remain_pot = 0;
               let pot_per_step = Math.floor(pen * s.data.pot * (borrowed_stat ? 2 : 1));
 
               // if there's one stat left after and it uses a penalty, dont leave any potential for it
-              if (stat_positives.length === 1) {
+              if (stat_positives.length === 1 && !stat_negs_seperate) {
                 let s1 = stat_positives[0];
                 if (Math.floor(this.determinePenalty([s, s1, ...this.stats]) * s1.data.pot) !== s1.data.pot) {
                   // if it incurs a penalty anyways -
@@ -474,9 +471,9 @@ class FORMULA {
               let available_pot = this.potential - remain_pot;
               let steps;
 
-              if (s.data.pot === 1) {
+              if (s.data.pot === 1 || (stat_negs_seperate && !stat_positives.lengths)) {
                 // these just need one point - there are no penalties for these even if done after the negs.
-                steps = 1
+                steps = 1;
               } else {
                 // max number of steps possible with available potential.
                 steps = Math.floor(available_pot / pot_per_step);
