@@ -492,6 +492,9 @@ class FORMULA {
             }
           }
         }
+        // if there is potential leftover check that nothing else can fill it without taking in one less negative.
+
+
         // check if one neg has to be left out
         if ((stat_positives.length ? 5 : 6) - this.stats.filter(s => s).length === negs.length) {
           negs = negs.slice(0, -1);
@@ -671,6 +674,8 @@ function copy_formula_for_pot(pot) {
 
   let buffer = steps.map((s, i) => `Step ${i + 1}: ${s[0]} (${s[1]} potential left)`);
   buffer.push(`Success rate: ${formula.success.toFixed(2)}%`);
+  let full = Object.keys(Simulator.results).find(f => Simulator.results[f].success === 100);
+  if (full && formula.success !== 100) buffer.push('For non-gamble: ' + full + ' potential required.');
 
   let aux = document.createElement("textarea");
   aux.value = `Potential: ${pot.replace(/[^0-9]/g, '')}\r\n` + buffer.join('\r\n');
