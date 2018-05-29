@@ -602,7 +602,7 @@ function show_details(pot) {
     buffer += `<tr><td>${++s}</td><td>${step[0]}</td><td style="text-align: right">${step[1]}</td></tr>`
   }
 
-  buffer += '</table><br /><h3 style="text-align: center">Materials Used</h3><table style="width:100%"><tr><th style="width:75%">Materials</th><th>Pts.</th></tr>'
+  buffer += `</table><div style="text-align: right"><button style="background: none; border: none; color: blue;" onclick="copy_formula_for_pot('${pot}')">[Copy Formula]</button></div><h3 style="text-align: center">Materials Used</h3><table style="width:100%"><tr><th style="width:75%">Materials</th><th>Pts.</th></tr>`
 
   for (let m in formula.mats) {
     buffer += `<tr><td style="text-align: left">${m}</td><td style="text-align: right">${formula.mats[m]}</td></tr>`;
@@ -661,4 +661,21 @@ function prompt_potential() {
   pot = parseInt(pot);
   if (!pot || pot < 1) return alert('Please enter a valid positive number.');
   get_results(pot);
+}
+
+function copy_formula_for_pot(pot) {
+  if (!Simulator.results[pot]) return;
+
+  let formula = Simulator.results[pot];
+  let steps = formula.steps;
+
+  let buffer = steps.map((s, i) => `Step ${i + 1}: ${s[0]} (${s[1]} potential left)`);
+  buffer.push(`Success rate: ${formula.success.toFixed(2)}%`);
+
+  let aux = document.createElement("textarea");
+  aux.value = `Potential: ${pot.replace(/[^0-9]/g, '')}\r\n` + buffer.join('\r\n');
+  document.body.appendChild(aux);
+  aux.select();
+  document.execCommand("copy");
+  document.body.removeChild(aux);
 }
