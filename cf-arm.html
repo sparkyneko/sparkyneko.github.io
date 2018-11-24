@@ -81,16 +81,18 @@ td {
     var a2d2cd3cd16cr16 = getCDM(0.03, 1.11);
     var a2d4cd7cd16cr16 = getCDM(0.04, 1.15);
     var a7cd16cr16 = getCDM(0.07, 1.08);
-    console.log(fc16, '\n', a2d2cd3cd16cr16, '\n', a2d4cd7cd16cr16, '\n', a7cd16cr16);
+    var a7d7cr16 = getCDM(0.11, 1);
 
     document.getElementById('fc16_cdm').innerHTML = fc16.toFixed(1);
     document.getElementById('a2d2cd3cd16cr16_cdm').innerHTML = a2d2cd3cd16cr16.toFixed(1);
     document.getElementById('a2d4cd7cd16cr16_cdm').innerHTML = a2d4cd7cd16cr16.toFixed(1);
     document.getElementById('a7cd16cr16_cdm').innerHTML = a7cd16cr16.toFixed(1);
+    document.getElementById('a7d7cr16_cdm').innerHTML = a7d7cr16.toFixed(1);
 
     document.getElementById('a2d2cd3cd16cr16').innerHTML = getDiffPC(fc16, a2d2cd3cd16cr16);
     document.getElementById('a2d4cd7cd16cr16').innerHTML = getDiffPC(fc16, a2d4cd7cd16cr16);
     document.getElementById('a7cd16cr16').innerHTML = getDiffPC(fc16, a7cd16cr16);
+    document.getElementById('a7d7cr16').innerHTML = getDiffPC(fc16, a7d7cr16);
   }
 </script>
 
@@ -104,6 +106,7 @@ td {
     <tr><td class='left_cell'>A2%D2%CD3%CD16CR16</td><td id="a2d2cd3cd16cr16"></td><td id="a2d2cd3cd16cr16_cdm"></td></tr>
     <tr><td class='left_cell'>A2%D4%CD7%CD16CR16</td><td id="a2d4cd7cd16cr16"></td><td id="a2d4cd7cd16cr16_cdm"></td></tr>
     <tr><td class='left_cell'>A7%CD16CR16</td><td id="a7cd16cr16"></td><td id="a7cd16cr16_cdm"></td></tr>
+    <tr><td class='left_cell'>A7%D7%CR16</td><td id="a7d7cr16"></td><td id="a7d7cr16_cdm"></td></tr>
   </table>
   <br /><br />
 
