@@ -1,0 +1,119 @@
+<style>
+  .slidecontainer {
+    width: 100%; /* Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 100%; /* Full-width */
+    height: 25px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+td {
+  text-align: right;
+}
+.left_cell {
+  text-align: left;
+}
+</style>
+<script>
+  var def = 0;
+
+  function getCDM (a, cd) {
+    let value = cd * ((2000 * a) + (((100 - def) * 2000) / 100) + 400);
+    return value <= 1 ? 1 : value; // always left with 1%, 1 damage in toram
+  }
+
+  function getDiffPC (fc, st) {
+    let diff = (st / fc) * 100;
+    return diff.toFixed(3);
+  }
+
+  function updateSlider() {
+    let a = document.getElementById('player_atk').value;
+    let d = document.getElementById('boss_def').value;
+
+    def = (d / a) * 100;
+    document.getElementById('def_slider').value = Math.round(def);
+    document.getElementById('def_value').innerHTML = Math.round(def);
+
+    updateDisplay(true);
+  }
+
+  function updateDisplay(skip_def_update) {
+    console.log('updatedisplay called!');
+    if (!skip_def_update) {
+      def = document.getElementById('def_slider').value;
+      document.getElementById('boss_def').value = Math.round(document.getElementById('player_atk').value * def / 100);
+      document.getElementById('def_value').innerHTML = Math.round(def);
+    }
+    console.log('updating for', def, '% DEF');
+    var fc16 = getCDM(0, 1.15);
+    var a2d2cd3cd16cr16 = getCDM(0.03, 1.11);
+    var a2d4cd7cd16cr16 = getCDM(0.04, 1.15);
+    var a7cd16cr16 = getCDM(0.07, 1.08);
+    console.log(fc16, '\n', a2d2cd3cd16cr16, '\n', a2d4cd7cd16cr16, '\n', a7cd16cr16);
+
+    document.getElementById('fc16_cdm').innerHTML = fc16.toFixed(1);
+    document.getElementById('a2d2cd3cd16cr16_cdm').innerHTML = a2d2cd3cd16cr16.toFixed(1);
+    document.getElementById('a2d4cd7cd16cr16_cdm').innerHTML = a2d4cd7cd16cr16.toFixed(1);
+    document.getElementById('a7cd16cr16_cdm').innerHTML = a7cd16cr16.toFixed(1);
+
+    document.getElementById('a2d2cd3cd16cr16').innerHTML = getDiffPC(fc16, a2d2cd3cd16cr16);
+    document.getElementById('a2d4cd7cd16cr16').innerHTML = getDiffPC(fc16, a2d4cd7cd16cr16);
+    document.getElementById('a7cd16cr16').innerHTML = getDiffPC(fc16, a7cd16cr16);
+  }
+</script>
+
+<body onload="updateDisplay()">
+  <h5>Rough Estimate of Lv10 Crossfire Damage</h5>
+  [using simplified formula CD·M·((A - D) + C)]
+  <br /><br />
+  <table cellpadding=5 border=1>
+    <tr><th class='left_cell'>Stat</th><th>% Damage</th><th>Damage Value in CD·M</th></tr>
+    <tr><td class='left_cell'>FC16</td><td id="fc16">100</td><td id="fc16_cdm"></td></tr>
+    <tr><td class='left_cell'>A2%D2%CD3%CD16CR16</td><td id="a2d2cd3cd16cr16"></td><td id="a2d2cd3cd16cr16_cdm"></td></tr>
+    <tr><td class='left_cell'>A2%D4%CD7%CD16CR16</td><td id="a2d4cd7cd16cr16"></td><td id="a2d4cd7cd16cr16_cdm"></td></tr>
+    <tr><td class='left_cell'>A7%CD16CR16</td><td id="a7cd16cr16"></td><td id="a7cd16cr16_cdm"></td></tr>
+  </table>
+  <br /><br />
+
+  <strong style="color: blue">USING STANDARD FC16 ARMOR</strong><br />
+  <strong>PLAYER ATK:</strong> <input type='number' value=2000 id='player_atk' oninput="updateSlider()">
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <strong>BOSS DEF:</strong> <input type='number' value=0 id='boss_def' oninput="updateSlider()">
+  <br />
+  <strong>DEF</strong> = <span id='def_value'></span>% of ATK
+  <div class="slidecontainer">
+    <input type="range" min="0" max="100" value="0" class="slider" id="def_slider" oninput="updateDisplay()">
+  </div>
+</body>
