@@ -1,0 +1,143 @@
+<style>
+    h3 {
+        color: blue;
+        text-align: center;
+    }
+
+    table {
+        width: 90%;
+        height: 90%;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        font-size: 18pt;
+    }
+</style>
+
+<script src="./display_info.js"></script>
+<script>
+
+    function escapeHTML (str) {
+        return ('' + str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/\//g, '&#x2f;');
+    }
+
+    let state = true; // true = slides, false = vote
+    let slide = 0;
+
+    function next() {
+        if (!state) return;
+        slide++;
+        loadSlide(slide);
+    }
+
+    function prev() {
+        if (!state) return;
+        slide--;
+        loadSlide(slide);
+    }
+
+    function loadSlide(num) {
+        if (num < 0) {
+            slide = 0; num = 0;
+        }
+        if (!slides[num]) {
+            slide = slides.length - 1;
+            return;
+        }
+
+        let data = slides[num];
+        let display = data;
+
+        if (!data.startsWith('!')) {
+            let [title, ...text] = data.split(/\n/g);
+            if (!text.length) {
+                text = [title];
+                title = '';
+            }
+
+            display = `<h3>${title}</h3>${text.map(line => 
+                line
+                .replace(/#mus\[[0-9]+\]/g, m => {
+                    let id = m.replace(/[^0-9]/g, '');
+                    return `<span onclick="loadMusic(${id})" style="color: blue">${music[id].name}</span>`
+                })
+                .replace(/#img\[[^\]]+\]/g, m => {
+                    let id = m.slice(5, m.length - 1);
+                    let [img, h, w] = id.split(',');
+
+                    console.log(id, img, h, w)
+                    let buffer = `src="${img}"`;
+                    if (h) buffer += ` height="${h}"`;
+                    if (w) buffer += ` width="${w}"`;
+                    return `<img ${buffer}>`
+                })
+                ).join('<br /><br />')}`;
+        } else {
+            display = data.slice(1);
+        }
+
+        document.getElementById('display').innerHTML = `<div style="height: 100%">${display}</div>`;
+    }
+    function loadState() {
+        if (state) {
+            loadSlide(slide);
+        } else {
+            loadGraph(true);
+        }
+    }
+
+    let vote_1 = 0;
+    let vote_2 = 0;
+    function vote(num) {
+        if (num === 1) vote_1++;
+        else vote_2++;
+
+        loadGraph();
+    }
+    function loadGraph(reset) {
+        if (reset) {
+            vote_1 = 0; vote_2 = 0;
+        }
+        let total = vote_1 + vote_2;
+
+        let html = `<center><h3 style="color: green;">Votes</h3><br /><table>
+            <tr><td onclick="vote(1)" style="width: 5%; height: 70px; padding: 10px; border-radius: 50px; border: 1px solid blue; background-color: aliceblue; text-align: center">1</td><td style="text-align: left"><div style="height: 75%; background-color: lightgreen; width: ${vote_1 * 100 / total}%; display: inline-block"></div></td><td style="width: 5%; padding-left: 10px">${vote_1}</td></tr>
+
+            <tr><td onclick="vote(2)" style="width: 5%; height: 70px; padding: 10px; border-radius: 50px; border: 1px solid blue; background-color: aliceblue; text-align: center">2</td><td style="text-align: left"><div style="height: 75%; background-color: darkgreen; width: ${vote_2 * 100 / total}%; display: inline-block"></div></td><td style="width: 5%; padding-left: 10px;">${vote_2}</td></tr>
+
+            </table></center>`;
+
+        document.getElementById('display').innerHTML = html;
+    }
+
+    function loadMusic(num) {
+        let track = music[num];
+        if (!track) return;
+        
+        document.getElementById('player').innerHTML = `<audio style="width: cover;" src="${track.url}" controls=""></audio>`;
+    }
+</script>
+
+
+<body onload="loadState()">
+    <center>
+        <table>
+            <tr>
+                <td colspan=2 id="display" style="border-radius: 10px; border: green 1px solid; background-color: #DEFFE3; padding: 15px;">
+                    
+                </td>
+            </tr>
+            <tr>
+                <td style="height: 15%">
+                    <!-- player -->
+                    <div id="player"></div>
+                </td>
+                <td style="height: 15%; text-align: right;">
+                    <!-- controls -->
+                    <button onclick="prev()">&lt;</button>
+                    <button onclick="state = !state; loadState();">*</button>
+                    <button onclick="next()">&gt;</button>
+
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
