@@ -1,0 +1,188 @@
+<!--
+This is a bit of code to specifically work with Azure's pet system. 
+The external replay viewer gets a JSON file from the server's static server
+and uses the HTML in that viewer in order to build the replay.
+-->
+<html>
+<style>
+    body {
+        padding-top: 20px;
+        padding-right: 50px;
+        padding-left: 50px;
+        
+        font-family: Verdana, Helvetica, Arial, sans-serif;
+        color: #B9C1F5;
+        
+        background-color: #1F2442;
+        text-align: center;
+    }
+    
+    .display {
+        border: 1px solid lightgreen;
+        background-color: lightblue;
+        
+        padding: 20px;
+        border-radius: 50px;
+        
+        margin: 0 auto;
+        color: black;
+    }
+    
+    .pets-infobox {
+        border-radius: 3px;
+        background:rgba(255, 248, 220, 0.2);
+        border: 1px dashed blue; 
+        color: #000000;
+        padding: 3px;
+        margin-bottom: 5px;
+        text-align: left;
+    }
+    
+    .large {
+        font-size: 12pt;
+    }
+    
+    .action {
+        background-color: aliceblue;
+        border:1px solid rgba(0,0,0,0.1);
+        padding: 15px;
+        border-radius: 5px;
+        margin: 3px;
+        
+        box-shadow: none;
+        filter: brightness(90%);
+        transition: box-shadow 0.3s, filter 0.3s;
+    }
+    .action:hover {
+        box-shadow: 0 0 10px gray;
+        filter: brightness(100%);
+    }
+    .action:active {
+        box-shadow: 0 0 50px white;
+    }
+    
+    .popup {
+        background:#1F2442;
+        border-color:#def0f1;
+    }
+    
+    .tabcontent {
+        display: none;
+    }
+    /* overwrite the default server font size and replace with a larger size. */
+    div[style*="font-size: 2"] {
+        font-size: 10pt !important;
+    }
+    </style>
+<script>
+    const server_table = {
+        'azure': 'http://oppai.azure.lol/',
+        'test': 'localhost-8080.psim.us/'
+    }
+    const autoplay_frame_duration = 2000;
+    let replayInfo = null;
+    let turns = [];
+    let currentTurn = 0;
+    let autoplay_timer = null;
+
+    function XHTTPrequest (url, callback) {
+        let req = new XMLHttpRequest();
+        req.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var data;
+                try {
+                    data = JSON.parse(this.responseText);
+                } catch (e) {
+                    data = this.responseText;
+                }
+                callback(data);
+            }
+        };
+
+        req.open("GET", url, true);
+        req.send();
+    }
+
+    function loadReplay() {
+        let chunks = document.location.href.split('#');
+        let fullUrl;
+        let id = chunks[1];
+        if (id === 'sample') {
+            fullUrl = 'https://raw.githubusercontent.com/sparkychildcharlie/sparkychildcharlie.github.io/master/sample.json';
+        } else {
+            if (!id) return document.getElementById('replay').innerHTML = 'Please go to a PS server with pets to search for a replay.';
+            let [server, timestamp] = id.split('-');
+
+            console.log(server, timestamp);
+            let url = server_table[server];
+            if (!url) return document.getElementById('replay').innerHTML = 'This server is not registered with the pet replay viewer.';
+
+            if (!timestamp) return document.getElementById('replay').innerHTML = 'Please go to a PS server with pets to search for a replay.';
+            fullUrl = url + 'pet-replays/' + timestamp + '.json';
+            console.log(fullUrl)
+        }
+        XHTTPrequest(fullUrl, res => {
+            // res should be JSON
+            if (typeof res !== 'object') return document.getElementById('replay').innerHTML = 'Invalid replay.';
+
+            turns = JSON.parse(res.html);
+            replayInfo = res;
+            
+            loadTurn(0);
+        })
+    }
+
+    function loadTurn(num, is_autoplay) {
+        if (!replayInfo) return;
+        if (num >= turns.length || num < 0) return;
+
+        currentTurn = num;
+
+        document.getElementById('replay').innerHTML = turns[num];
+        return !!(turns[currentTurn + 1]);
+    }
+
+    function prev() {
+        loadTurn(currentTurn - 1);
+    }
+
+    function next(is_autoplay) {
+        return loadTurn(currentTurn + 1, is_autoplay);
+    }
+    
+    function skip() {
+        let targetTurn;
+        do {
+            targetTurn = prompt(`Which turn to skip to? (Total turns: ${turns.length + 1})`);
+        } while (!targetTurn || !parseInt(targetTurn) || parseInt(targetTurn) < 0 || parseInt(targetTurn) >= turns.length);
+
+        loadTurn(targetTurn);
+    }
+
+    function autoplay() {
+        if (autoplay_timer !== null) return; // timer already in progress
+        autoplay_timer = setInterval(() => {
+            let is_next = next(true);
+            if (!is_next) pause();
+        }, autoplay_frame_duration)
+    }
+
+    function pause() {
+        clearInterval(autoplay_timer);
+        autoplay_timer = null;
+    }
+</script>
+
+<body onload='loadReplay()'>
+    <div id="replay" style="border: 1px solid blue; padding: 10px; display: inline-block; text-align: left; width: 90%"></div>
+    <div style="text-align: center">
+        <br />
+        <button class="action large" onclick="prev()">◀◀</button>
+        <button class="action large" onclick="autoplay()">▶</button>
+        <button class="action large" onclick="pause()">❚❚</button>
+        <button class="action large" onclick="next()">▶▶</button>
+        <button class="action large" onclick="skip()">▶▶❚</button>   
+    </div>
+</body>
+
+</html>
