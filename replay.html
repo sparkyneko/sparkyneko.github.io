@@ -76,7 +76,8 @@ and uses the HTML in that viewer in order to build the replay.
     </style>
 <script>
     const server_table = {
-        'azure': 'https://oppai.azure.lol/',
+        'azure': 'http://oppai.azure.lol/',
+        'test': 'localhost-8080.psim.us/'
     }
     const autoplay_frame_duration = 2000;
     let replayInfo = null;
@@ -98,7 +99,7 @@ and uses the HTML in that viewer in order to build the replay.
             }
         };
 
-        req.open("GET", url, true);
+        req.open("GET", "https://cors-anywhere.herokuapp.com/" + url, true);
         req.send();
     }
 
@@ -127,6 +128,8 @@ and uses the HTML in that viewer in order to build the replay.
             turns = JSON.parse(res.html);
             replayInfo = res;
             
+            document.getElementById('info').innerHTML = `<strong>${res.matchup}</strong><br />Date: ${res.date}<br />Mode: ${res.mode} (${res.format})<br />Banlist: ${res.banlist}<br />Rulesets: ${res.rulesets}`;
+            
             loadTurn(0);
         })
     }
@@ -152,8 +155,11 @@ and uses the HTML in that viewer in order to build the replay.
     function skip() {
         let targetTurn;
         do {
-            targetTurn = prompt(`Which turn to skip to? (Total turns: ${turns.length + 1})`);
-        } while (!targetTurn || !parseInt(targetTurn) || parseInt(targetTurn) < 0 || parseInt(targetTurn) >= turns.length);
+            targetTurn = prompt(`Which turn to skip to? (Total turns: ${turns.length - 1})`);
+        } while (parseInt(targetTurn) && (parseInt(targetTurn) < 0 || parseInt(targetTurn) >= turns.length));
+
+        targetTurn = parseInt(targetTurn);
+        if (!targetTurn) return;
 
         loadTurn(targetTurn);
     }
@@ -182,6 +188,8 @@ and uses the HTML in that viewer in order to build the replay.
         <button class="action large" onclick="next()">▶▶</button>
         <button class="action large" onclick="skip()">▶▶❚</button>   
     </div>
+    <div class="action" style="width: 25%; height: 150px; overflow: scroll; text-align: left; color: blue" id="info">
+</div>
 </body>
 
 </html>
