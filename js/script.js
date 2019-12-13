@@ -1,7 +1,7 @@
 "use strict";
 
-const MAX_STEPS = 17; // max is fill +16
-const SLOTS = 6; // max number of slots is 6
+const MAX_STEPS = 20; // max is fill +16
+const SLOTS = 8; // max number of slots is 6
 
 const OPTIONS = [
     { "name": "STR", "mat": "Beast", "pot": 5, "cost": 25, "cat": "Enhance Stats", "type": "u" },
@@ -115,8 +115,8 @@ class SIMULATOR {
             data = OPTIONS.find(piece => piece.name === value_name);
         }
 
-        data.maxSteps = Math.floor(70 / data.pot);
-        if (data.name === 'Aggro %') data.maxSteps = 10;  // for some reason this only goes up to +10/-10 go figure.
+        data.maxSteps = Math.floor(100 / data.pot);
+        if (data.name === 'Aggro %' || data.name === 'MaxMP') data.maxSteps = 15;  // for some reason this only goes up to +15/-15 go figure.
         if (data.maxSteps >= MAX_STEPS) data.maxSteps = MAX_STEPS;
         else if (!data.maxSteps) data.maxSteps = 1;
         return data;
