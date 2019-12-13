@@ -569,7 +569,7 @@ function update_config(aspect) {
 
 function build_stat_dropdown() {
   let buffer = '';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < SLOTS; i++) {
     buffer += Simulator.getDropdown(i) + ` <input style="width: 50px;" disabled=disabled type="number" value='' id='slot${i}_value' oninput="update_stats(${i})"></input><br />`;
   }
   document.getElementById('stat_menu').innerHTML = buffer;
