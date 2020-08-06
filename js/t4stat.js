@@ -186,7 +186,7 @@ class Slot {
 
     onKeyPress(evt) {
         var charCode = (evt.which) ? evt.which : evt.keyCode;
-        console.log(charCode);
+        // console.log(charCode);
 
         const exceptions = [8, 9, 37, 39, 189]
         // number management
@@ -346,7 +346,6 @@ class Slot {
         const slot_id = `slot${this.slot_num}`;
         const input_id = `input${this.slot_num}`;
 
-        console.log('sync', this.stat_data_id, this.futureStat);
         document.getElementById(slot_id).value = this.stat_data_id;
         document.getElementById(input_id).value = this.futureStat; 
         this.applyColouration();
