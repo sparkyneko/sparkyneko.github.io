@@ -256,7 +256,11 @@ class Slot {
             this.futureStat = 0;
             this.currentSteps = 0;
             this.futureSteps = 0;
+            this.stat_data_id = 0;
+
             document.getElementById(input_id).disabled = true;
+            this.syncDisplayWithValues();
+            this.stat.onUpdate();
             return;
         }
 
@@ -342,8 +346,9 @@ class Slot {
         const slot_id = `slot${this.slot_num}`;
         const input_id = `input${this.slot_num}`;
 
-        document.getElementById(input_id).value = this.futureStat; 
+        console.log('sync', this.stat_data_id, this.futureStat);
         document.getElementById(slot_id).value = this.stat_data_id;
+        document.getElementById(input_id).value = this.futureStat; 
         this.applyColouration();
     }
 
@@ -562,8 +567,10 @@ class Stat {
             if (!categories[slot.stat_data.cat]) categories[slot.stat_data.cat] = 0;
             categories[slot.stat_data.cat]++;
         }
+        let penalty_values = Object.keys(categories).map(c => categories[c]).map(repeats => PENALTY_DATA[repeats]);
+        if (!penalty_values.length) return 1;
 
-        let penalty = Object.keys(categories).map(c => categories[c]).map(repeats => PENALTY_DATA[repeats]).reduce((a, b) => a + b);
+        let penalty = penalty_values.reduce((a, b) => a + b);
         return 1 + 0.01 * penalty;
     }
 
