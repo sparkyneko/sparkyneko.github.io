@@ -1,7 +1,7 @@
 
-const MAX_STEPS = 20; // max is fill +16
+const MAX_STEPS = 20;
 const BONUS_STEPS = 1;
-const SLOTS = 8; // max number of slots is 6
+const SLOTS = 8;
 
 const PENALTY_DATA = [0, 0, 20, 45, 80, 125, 180, 245, 320];
 
