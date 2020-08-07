@@ -608,6 +608,7 @@ class Stat {
     updatePotentialSuccessDisplay() {
         document.getElementById('potential_display').innerHTML = `Potential: ${this.future_pot} / ${this.pot}`;
         document.getElementById('success_rate_display').innerHTML = `Success Rate: ${this.getSuccessRate()}%`;
+        document.getElementById('confirm_button').disabled = this.pot === this.future_pot
     }
 
     updateMaterialCosts() {
@@ -624,6 +625,9 @@ class Stat {
         let display = this.steps.getDisplay();
         if (this.finished) display += `<br />Success Rate: ${this.getSuccessRate()}%`;
         document.getElementById('formula_display').innerHTML = `<span style="font-weight: bold; font-size: 12pt;">Steps</span><br /><br />${this.type === 'w' ? 'Weapon' : 'Armor'} - Potential: ${this.starting_pot}<br />${display}`;
+        document.getElementById('redo_button').disabled = !this.steps.redo_queue.length;
+        document.getElementById('undo_button').disabled = !this.steps.formula.length;
+        document.getElementById('repeat_button').disabled = !this.steps.formula.length;
     }
 
     loadDisplay() {
@@ -634,11 +638,12 @@ class Stat {
             buffer += slot.buildDisplay() + '<br />'
         }
 
-        const confirm = `<button onclick="App.getCurrent().confirm()" id='confirm_button'>Confirm</button>`;
-        const repeat = `<button id="repeat_button" onclick="App.getCurrent().repeat()">Repeat</button>`;
-        const undo = `<button onclick="App.getCurrent().undo()">Undo</button>`;
+        const confirm = `<button onclick="App.getCurrent().confirm()" id='confirm_button' disabled>Confirm</button>`;
+        const repeat = `<button id="repeat_button" onclick="App.getCurrent().repeat()" disabled>Repeat</button>`;
+        const undo = `<button onclick="App.getCurrent().undo()" disabled id="undo_button">Undo</button>`;
+        const redo = `<button onclick="App.getCurrent().redo()" disabled id="redo_button">Redo</button>`;
 
-        const display = `<table><tr><td style="text-align: center" id='potential_display'>Potential: ${potential}</td></tr><tr><td>${buffer}</td></tr><tr><td style="text-align: center" id="success_rate_display">Success Rate: ${this.getSuccessRate()}%</td></tr><tr><td style="text-align: center">${confirm} ${repeat} ${undo}</td></tr></table>`;
+        const display = `<table><tr><td style="text-align: center" id='potential_display'>Potential: ${potential}</td></tr><tr><td>${buffer}</td></tr><tr><td style="text-align: center" id="success_rate_display">Success Rate: ${this.getSuccessRate()}%</td></tr><tr><td style="text-align: center">${confirm} ${repeat} ${undo} ${redo}</td></tr></table>`;
         document.getElementById('workspace').innerHTML = display;
         this.updateMaterialCosts();
         this.updateFormulaDisplay();
@@ -734,6 +739,35 @@ class Stat {
             if (instruction[2]) instruction[2] = 0;
             instruction[1] *= -1;
 
+            this.slots[slot_num].rawOverride(instruction);
+        }
+        
+        // rebuild formula
+        this.steps.buildCondensedFormula();
+        this.updateFormulaDisplay();
+        this.updateMaterialCosts();
+        this.updatePotentialSuccessDisplay();
+
+        App.saveToStorage();
+    }
+
+    redo() {
+        let last_step = this.steps.redo();
+
+        // deal with potential
+        this.future_pot = last_step.pot_after+ 0;
+        this.pot = last_step.pot_after + 0;
+
+        // deal with mat costs
+        for (let mat in last_step.step_mats) {
+            this.mats[mat] += last_step.step_mats[mat];
+        }
+        this.max_mats = last_step.max_mats_after;
+
+        // deal with stats
+        const step_data = last_step.code;
+        for (const instruction of step_data) {
+            let slot_num = instruction[0];
             this.slots[slot_num].rawOverride(instruction);
         }
         
