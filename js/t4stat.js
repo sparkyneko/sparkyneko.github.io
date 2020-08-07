@@ -149,7 +149,7 @@ class Slot {
         
         this.currentSteps = 0;
         this.futureSteps = 0;
-        
+
         this.slot_num = slot_num;
         
         this.stat_name = null;
@@ -159,10 +159,12 @@ class Slot {
         this.stat = stat;
         
         this.new_stat = true;
+
+        this.disabled = false;
     }
 
     buildDisplay() {
-        let buffer = `<select id="slot${this.slot_num}" onchange="CurrentStat.slots[${this.slot_num}].onUpdate()"><option value=0>CHOOSE STAT</option>`;
+        let buffer = `<select id="slot${this.slot_num}" onchange="App.getCurrent().slots[${this.slot_num}].onUpdate()"><option value=0>CHOOSE STAT</option>`;
         let last_cat = '';
         let cat_id = 0;
 
@@ -180,7 +182,7 @@ class Slot {
 
         buffer += '</select>';
 
-        buffer += `&nbsp;&nbsp;<input type="text" maxlength=4 disabled id="input${this.slot_num}" value=0 onkeydown="CurrentStat.slots[${this.slot_num}].onKeyPress(event)" oninput="CurrentStat.slots[${this.slot_num}].onUpdate()" style="color: blue"></input> <span id="matcost${this.slot_num}" style="color: green; font-size: 8pt"></span>`
+        buffer += `&nbsp;&nbsp;<input type="text" maxlength=4 size=4 disabled id="input${this.slot_num}" value=0 onkeydown="App.getCurrent().slots[${this.slot_num}].onKeyPress(event)" oninput="App.getCurrent().slots[${this.slot_num}].onUpdate()" style="color: blue"></input> <span id="matcost${this.slot_num}" style="color: green; font-size: 8pt"></span>`
         return buffer;
     }
 
@@ -245,7 +247,6 @@ class Slot {
         const input_id = `input${this.slot_num}`;
         const cost_id = `matcost${this.slot_num}`;
 
-
         let data_id = parseInt(document.getElementById(slot_id).value);
 
         if (data_id === 0) {
@@ -275,7 +276,11 @@ class Slot {
         // enable input field
         document.getElementById(input_id).disabled = false;
 
-        this.futureStat = document.getElementById(input_id).value; 
+        let future_stat = document.getElementById(input_id).value;
+
+        if (/[^0-9\-]/g.test(future_stat)) return this.syncDisplayWithValues();
+
+        this.futureStat = future_stat;
 
         this.futureSteps = this.statToSteps();
 
@@ -319,18 +324,12 @@ class Slot {
                 this.futureSteps = 0;
                 this.stat_data_id = 0;
 
-                document.getElementById(`input${this.slot_num}`).disabled = true;
-                document.getElementById(`slot${this.slot_num}`).disabled = false;
-
                 this.syncDisplayWithValues();
                 return;
             } else {
                 this.stat_data_id = id;
-                this.stat_data = deep_clone(OPTIONS[data_id]);
+                this.stat_data = deep_clone(OPTIONS[id - 1]);
                 this.stat_name = this.stat_data.name;
-
-                document.getElementById(`slot${this.slot_num}`).disabled = true;
-                document.getElementById(`input${this.slot_num}`).disabled = false;
             }
         }
 
@@ -348,6 +347,9 @@ class Slot {
 
         document.getElementById(slot_id).value = this.stat_data_id;
         document.getElementById(input_id).value = this.futureStat; 
+
+        document.getElementById(slot_id).disabled = !!this.stat_name || this.stat.finished;
+        document.getElementById(input_id).disabled = !this.stat_name || this.stat.finished;
         this.applyColouration();
     }
 
@@ -520,6 +522,8 @@ class Slot {
     }
 
     unlock() {
+        if (this.disabled) return; // slot is inactive!
+
         const slot_id = `slot${this.slot_num}`;
         const input_id = `input${this.slot_num}`;
         if (!this.stat_name) document.getElementById(slot_id).disabled = false;
@@ -528,7 +532,7 @@ class Slot {
 }
 
 class Stat {
-    constructor(type, starting_pot, recipe_pot) {
+    constructor(details) {
         this.slots = [
             new Slot(0, this),
             new Slot(1, this),
@@ -540,19 +544,23 @@ class Stat {
             new Slot(7, this),
         ];  // 8 empty slots
 
+        this.details = deep_clone(details);
 
-        this.type = type;
-        this.recipe_pot = parseInt(recipe_pot);
-        this.pot = parseInt(starting_pot);
+        this.type = details.weap_arm;
+        this.recipe_pot = parseInt(details.recipe_pot);
+        this.pot = parseInt(details.starting_pot);
         this.future_pot = this.pot + 0;
         this.steps = new Formula(this);
-        this.starting_pot = starting_pot;
+        this.starting_pot = parseInt(details.starting_pot);
 
         this.mats = { Metal: 0, Cloth: 0, Beast: 0, Wood: 0, Medicine: 0, Mana: 0 };
         this.step_mats = { Metal: 0, Cloth: 0, Beast: 0, Wood: 0, Medicine: 0, Mana: 0 };
 
-        this.potential_return = 30.5; // 30.5% with tier 4 (doubled to 61% for opposing stats). (5 + TEC / 10)%
-        this.bonus_potential_return = 8 // potential return excess of 100 potential per stat (-21 or more extreme) is down to 4% with 255 TEC. (3 + TEC / 51)%
+        this.max_mats = 0;
+        this.step_max_mats = 0;
+
+        this.potential_return = 5 + details.tec / 10;
+        this.bonus_potential_return = toram_round(3 + details.tec / 51);
 
         this.finished = false;
 
@@ -607,7 +615,7 @@ class Stat {
         for (let mat in this.mats) {
             buffer += `<tr><td>${mat}</td><td>${this.mats[mat]}</td></tr>`;
         }
-        buffer += `</table>`
+        buffer += `<tr><th style="text-align: left">Highest / Step</th><td>${this.max_mats}</td></tr></table>`
 
         document.getElementById('material_display').innerHTML = buffer;
     }
@@ -626,9 +634,9 @@ class Stat {
             buffer += slot.buildDisplay() + '<br />'
         }
 
-        const confirm = `<button onclick="CurrentStat.confirm()" id='confirm_button'>Confirm</button>`;
-        const repeat = `<button id="repeat_button" onclick="CurrentStat.repeat()">Repeat</button>`;
-        const undo = `<button onclick="CurrentStat.undo()">Undo</button>`;
+        const confirm = `<button onclick="App.getCurrent().confirm()" id='confirm_button'>Confirm</button>`;
+        const repeat = `<button id="repeat_button" onclick="App.getCurrent().repeat()">Repeat</button>`;
+        const undo = `<button onclick="App.getCurrent().undo()">Undo</button>`;
 
         const display = `<table><tr><td style="text-align: center" id='potential_display'>Potential: ${potential}</td></tr><tr><td>${buffer}</td></tr><tr><td style="text-align: center" id="success_rate_display">Success Rate: ${this.getSuccessRate()}%</td></tr><tr><td style="text-align: center">${confirm} ${repeat} ${undo}</td></tr></table>`;
         document.getElementById('workspace').innerHTML = display;
@@ -655,18 +663,30 @@ class Stat {
             this.steps.gatherChanges(slot.slot_num, slot.stat_name, slot.futureSteps - slot.currentSteps, slot.futureStat - slot.currentStat, slot.new_stat);
             slot.confirm();
         }
-        this.steps.commitChanges();
 
-        this.updateMaterialCosts();
-        this.updateFormulaDisplay();
+        this.step_max_mats = Object.keys(this.step_mats).map(m => this.step_mats[m]).sort((a, b) => b - a)[0];
+        if (this.step_max_mats <= this.max_mats) this.step_max_mats = 0;
+
+        this.steps.commitChanges();
+        
+        // update max mats
+        if (this.step_max_mats) {
+            this.max_mats = this.step_max_mats + 0;
+            this.step_max_mats = 0;
+        }
 
         if (this.slots.every(slot => slot.stat_name) || this.future_pot <= 0) {
             this.finished = true;
             this.lockAllSlots();
             this.updateFormulaDisplay();
+            App.saveToStorage();
         } else {
+            App.saveToStorage();
             this.pot = this.future_pot + 0;
         }
+        
+        this.updateMaterialCosts();
+        this.updateFormulaDisplay();
     }
 
     lockAllSlots() {
@@ -690,7 +710,7 @@ class Stat {
     undo() {
         if (!this.steps.formula.length) return;
 
-        let last_step = this.steps.formula.pop();
+        let last_step = this.steps.undo();
         if (this.finished) {
             this.finished = false;
             this.unlockAllSlots();
@@ -704,6 +724,7 @@ class Stat {
         for (let mat in last_step.step_mats) {
             this.mats[mat] -= last_step.step_mats[mat];
         }
+        this.max_mats = last_step.max_mats_before;
 
         // deal with stats
         const step_data = last_step.code;
@@ -721,6 +742,8 @@ class Stat {
         this.updateFormulaDisplay();
         this.updateMaterialCosts();
         this.updatePotentialSuccessDisplay();
+
+        App.saveToStorage();
     }
 
     repeat() {
@@ -734,6 +757,58 @@ class Stat {
 
         this.confirm();
     }
+
+    // saving
+    grabSnapshot() {
+        return {
+            formula: this.steps.formula,
+            settings: {
+                type: this.type,
+                recipe_pot: this.recipe_pot,
+                future_pot: this.future_pot,
+                starting_pot: this.starting_pot,
+                potential_return: this.potential_return,
+                bonus_potential_return: this.bonus_potential_return,
+                finished: this.finished,
+                max_mats: this.max_mats,
+            },
+        }
+    }
+
+    // override - auto updating data.
+    autoLoad(data) {
+        const formula = data.formula;
+
+        this.steps.formula = formula;
+        this.steps.buildCondensedFormula();
+
+        Object.assign(this, data.settings);
+
+        for (let step of formula) {
+            this.runStepInstruction(step);
+        }
+    }
+
+    runStepInstruction(instruction) {
+        this.future_pot = instruction.pot_after;
+        this.pot = this.finished ? instruction.pot_before : instruction.pot_after;
+        
+        for (let mat in instruction.step_mats) {
+            this.mats[mat] += instruction.step_mats[mat];
+        }
+
+        const step_data = instruction.code;
+        for (const instr of step_data) {
+            let slot_num = instr[0];
+            this.slots[slot_num].rawOverride(instr);
+        }
+
+        // rebuild formula
+        this.steps.buildCondensedFormula();
+        this.updateFormulaDisplay();
+        this.updateMaterialCosts();
+        this.updatePotentialSuccessDisplay();
+    }
 }
 
 class Formula {
@@ -745,6 +820,8 @@ class Formula {
 
         this.step_changes = [];
         this.step_code_changes = [];
+
+        this.redo_queue = [];
     }
 
     gatherChanges(slot, stat, delta_step, delta_stat, new_stat) {
@@ -765,11 +842,16 @@ class Formula {
             pot_before: this.stat.pot,
             pot_after: this.stat.future_pot,
             step_mats: this.stat.step_mats,
+
+            max_mats_before: this.stat.max_mats,
+            max_mats_after: this.stat.step_max_mats || this.max_mats
         })
 
+        this.redo_queue = [];
         this.step_changes = [];
         this.step_code_changes = [];
         this.buildCondensedFormula();
+
     }
 
     buildCondensedFormula() {
@@ -789,23 +871,185 @@ class Formula {
     }    
 
     getDisplay() {
-        const display = this.condensed_formula.map((step, index) => `#${index + 1}. ${step.text}${step.repeat > 1 ? ` x${step.repeat}` : ''} <span style="color: gray">(${step.pot_after}pot)</span>`);
+        const display = this.condensed_formula.map((step, index) => `#${index + 1}. ${step.text}${step.repeat > 1 ? ` (x${step.repeat})` : ''} <span style="color: gray">(${step.pot_after}pot)</span>`);
         return display.join('<br />')
+    }
+
+    undo() {
+        let step = this.formula.pop();
+        this.redo_queue.push(deep_clone(step));
+        return step;
+    }
+
+    redo() {
+        let step = this.redo_queue.pop();
+        this.formula.push(deep_clone(step));
+        return step;
     }
 }
 
-let CurrentStat = null;
+class MainApp {
+    constructor() {
+        this.stats = {};
 
-function start_stat() {
-    const starting_pot = document.getElementById('starting_pot').value;
-    const recipe_pot = document.getElementById('recipe_pot').value;
-    const weap_arm = document.getElementById('weap_arm').value;
-    CurrentStat = new Stat(weap_arm, starting_pot, recipe_pot);
-    document.getElementById('workbench').hidden = false;
+        this.current = null;
+    }
+
+    loadFromStorage() {
+        let raw_data = localStorage.getItem('instance_data');
+        if (!raw_data) return;
+
+        let data;
+        try {
+            data = JSON.parse(raw_data)
+        } catch (e) {}
+
+        if (!data) return;
+
+        // recreate each stat and run overrides to apply each step.
+        for (let wid in data) {
+            let instance_data = data[wid];
+            let stat = this.spawn(wid);
+
+            stat.autoLoad(instance_data);
+        }
+    }
+
+    saveToStorage() {
+        let data_to_store = {};
+        for (let id in this.stats) {
+            data_to_store[id] = this.stats[id].grabSnapshot();
+        }
+
+        localStorage.setItem('instance_data', JSON.stringify(data_to_store));
+    }
+
+    getNewWorkspaceId() {
+        let id = 0;
+        do {
+            id++
+        } while (this.stats['Stat_' + id])
+        return 'Stat_' + id;
+    }
+
+    updateNavigationBar() {
+        if (!Object.keys(this.stats).length) {
+            document.getElementById('navigation_bar').hidden = true;
+        } else {
+            let display = this.buildNavigationBar();
+            document.getElementById('navigation_bar').innerHTML = display;
+            document.getElementById('navigation_bar').hidden = false;
+        }
+
+        document.getElementById('rename_button').disabled = !this.current;
+        document.getElementById('duplicate_button').disabled = !this.current;
+    }
+
+    buildNavigationBar() {
+        let buffer = [];
+        for (const workspace_id in this.stats) {
+            const instance = this.stats[workspace_id]
+            const focused = workspace_id === this.current;
+
+            buffer.push(`<div style="display: inline-block; border: solid 1px blue; border-radius: 7px; padding: 3px;${focused ? ' background-color: lightpink' :' background-color: none'}"><button style="border: none; background: none" onclick="App.setCurrent('${workspace_id}')">${workspace_id}</button><button onclick="App.despawn('${workspace_id}')" style="color: red; border: none; background: none">x</button></div>`);
+        }
+        return buffer.join(' ')
+    }
+
+    promptRename() {
+        let new_name = prompt(`What shall we name this current stat instance? Current name: ${this.current}`);
+
+        if (!new_name) return;
+        if (this.stats[new_name]) return alert('The name you selected is already in use by another stat instance.');
+
+        this.stats[new_name] = this.stats[this.current];
+        delete this.stats[this.current];
+        this.current = new_name;
+        this.updateNavigationBar();
+    }
+
+    spawn(id) {
+        const starting_pot = document.getElementById('starting_pot').value;
+        const recipe_pot = document.getElementById('recipe_pot').value;
+        const weap_arm = document.getElementById('weap_arm').value;
+        const workspace_id = id || this.getNewWorkspaceId();
+
+        const details = {
+            weap_arm,
+            starting_pot,
+            recipe_pot,
+            workspace_id,
+            tec: 255,
+            proficiency: 0,
+        };
+
+        this.stats[workspace_id] = new Stat(details);
+        document.getElementById('workbench').hidden = false;
+        this.current = workspace_id;
+
+        this.updateNavigationBar();
+        if (!id) this.saveToStorage();
+        return this.stats[workspace_id];
+    }
+
+    despawn(workspace_id) {
+        if (!this.stats[workspace_id]) return;
+
+        if (this.current === workspace_id) {
+            document.getElementById('workbench').hidden = true;
+            this.current = null;
+        }
+
+        delete this.stats[workspace_id];
+        this.updateNavigationBar();
+        this.saveToStorage();
+    }
+
+    getCurrent() {
+        return this.stats[this.current];
+    }
+
+    setCurrent(value) {
+        if (this.current === value) return;
+
+        this.current = value;
+        document.getElementById('workbench').hidden = false;
+
+        // code for updating display
+        const current = this.getCurrent();
+        current.updateFormulaDisplay();
+        current.updateMaterialCosts();
+        current.updatePotentialSuccessDisplay();
+        
+        for (let slot of current.slots) {
+            slot.syncDisplayWithValues();
+        }
+        this.updateNavigationBar();
+
+        document.getElementById('confirm_button').disabled = !!current.finished;
+        document.getElementById('repeat_button').disabled = !!current.finished;
+    }
+
+    duplicateCurrent() {
+        let current_data = this.getCurrent().grabSnapshot();
+        this.spawn(`Copy of ${this.current}`).autoLoad(current_data);
+        this.saveToStorage();
+    }
+    
+    reset() {
+        this.current = null;
+        this.stats = {};
+        this.updateNavigationBar();
+        document.getElementById('workbench').hidden = true;
+
+        this.saveToStorage();
+    }
 }
+
+const App = new MainApp();
 
 function show_help() {
     alert(
-        `Hotkeys\nA - set value to max\nS - increase value by 1 stepwise and confirm\nD - set value to min\nF - repeat stepwise addition of stats until you hit +20, or right before you run out of potential\nR - undo the last step.\nQ / Up_Arrow - increase stat by 1 step, without confirming\nW / Down_Arrow - decrease stat by 1 step, without confirming`
+        `Hotkeys (may not work on mobile)\nA - set value to max\nS - increase value by 1 stepwise and confirm\nD - set value to min\nF - repeat stepwise addition of stats until you hit +20, or right before you run out of potential\nR - undo the last step.\nQ / Up_Arrow - increase stat by 1 step, without confirming\nW / Down_Arrow - decrease stat by 1 step, without confirming`
     )
 }
