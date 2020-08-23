@@ -182,7 +182,7 @@ class Slot {
 
         buffer += '</select>';
 
-        buffer += `&nbsp;&nbsp;<input type="text" maxlength=4 size=4 disabled id="input${this.slot_num}" value=0 onkeydown="App.getCurrent().slots[${this.slot_num}].onKeyPress(event)" oninput="App.getCurrent().slots[${this.slot_num}].onUpdate()" style="color: blue"></input> <span id="matcost${this.slot_num}" style="color: green; font-size: 8pt"></span>`
+        buffer += `&nbsp;&nbsp;<input autocomplete="off" type="text" maxlength=4 size=4 disabled id="input${this.slot_num}" value=0 onkeydown="App.getCurrent().slots[${this.slot_num}].onKeyPress(event)" oninput="App.getCurrent().slots[${this.slot_num}].onUpdate()" style="color: blue"></input> <span id="matcost${this.slot_num}" style="color: green; font-size: 8pt"></span>`
         return buffer;
     }
 
@@ -323,6 +323,7 @@ class Slot {
                 this.currentSteps = 0;
                 this.futureSteps = 0;
                 this.stat_data_id = 0;
+                this.new_stat = true;
 
                 this.syncDisplayWithValues();
                 return;
@@ -330,6 +331,7 @@ class Slot {
                 this.stat_data_id = id;
                 this.stat_data = deep_clone(OPTIONS[id - 1]);
                 this.stat_name = this.stat_data.name;
+                this.new_stat = false;
             }
         }
 
@@ -712,8 +714,18 @@ class Stat {
         document.getElementById('repeat_button').disabled = false;
     }
 
+    resetToBase() {
+        for (const slot of this.slots) {
+            if (slot.new_stat) {
+                slot.rawOverride([slot.slot_num, 0, 0]); 
+            }
+        }
+    }
+
     undo() {
         if (!this.steps.formula.length) return;
+
+        this.resetToBase();
 
         let last_step = this.steps.undo();
         if (this.finished) {
@@ -753,6 +765,7 @@ class Stat {
 
     redo() {
         let last_step = this.steps.redo();
+        this.resetToBase();
 
         // deal with potential
         this.future_pot = last_step.pot_after+ 0;
@@ -771,6 +784,11 @@ class Stat {
             this.slots[slot_num].rawOverride(instruction);
         }
         
+        if (last_step.finished) {
+            this.finished = true;
+            this.lockAllSlots();
+        }
+
         // rebuild formula
         this.steps.buildCondensedFormula();
         this.updateFormulaDisplay();
@@ -795,7 +813,7 @@ class Stat {
     // saving
     grabSnapshot() {
         return {
-            formula: this.steps.formula,
+            formula: deep_clone(this.steps.formula),
             settings: {
                 type: this.type,
                 recipe_pot: this.recipe_pot,
@@ -867,7 +885,7 @@ class Formula {
     commitChanges() {
         if (!this.step_code_changes.length) return; // nothing changed
 
-        let delta_pot = this.stat.future_pot - this.stat.pot;
+        const finished = this.stat.slots.every(slot => slot.stat_name) || this.stat.future_pot <= 0;
 
         this.formula.push({
             repeat: 1,
@@ -878,7 +896,9 @@ class Formula {
             step_mats: this.stat.step_mats,
 
             max_mats_before: this.stat.max_mats,
-            max_mats_after: this.stat.step_max_mats || this.max_mats
+            max_mats_after: this.stat.step_max_mats || this.max_mats,
+
+            finished
         })
 
         this.redo_queue = [];
