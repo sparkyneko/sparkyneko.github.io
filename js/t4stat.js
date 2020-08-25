@@ -572,7 +572,7 @@ class Stat {
     calculatePenalty() {
         const categories = {};
         for (let slot of this.slots) {
-            if (!slot.stat_name) continue;
+            if (!slot.stat_name || (slot.new_stat && !slot.futureSteps)) continue;
             if (!categories[slot.stat_data.cat]) categories[slot.stat_data.cat] = 0;
             categories[slot.stat_data.cat]++;
         }
@@ -651,7 +651,17 @@ class Stat {
         this.updateFormulaDisplay();
     }
 
+    removeEmptySlots() {
+        for (const slot of this.slots) {
+            console.log(slot.new_stat, slot.futureSteps);
+            if (slot.new_stat && !slot.futureSteps) {
+                slot.rawOverride([slot.slot_num, 0, 0]); 
+            }
+        }   
+    }
+
     confirm() {
+        this.removeEmptySlots();
         this.step_mats = { Metal: 0, Cloth: 0, Beast: 0, Wood: 0, Medicine: 0, Mana: 0 };
         for (const slot of this.slots) {
             if (!slot.stat_name) continue;
