@@ -1,4 +1,4 @@
-Welcome to sparkychild's website! :3
+Welcome to sparkychild's website! : a Amazing Website !
 ---
 
 [Profile Tester](sparkychildcharlie.github.io/profile)
