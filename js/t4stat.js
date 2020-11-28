@@ -1,6 +1,6 @@
 
 const MAX_STEPS = 20;
-const BONUS_STEPS = 1;
+const BONUS_STEPS = 2;
 const SLOTS = 8;
 
 const PENALTY_DATA = [0, 0, 20, 45, 80, 125, 180, 245, 320];
