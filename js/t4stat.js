@@ -576,7 +576,7 @@ class Stat {
         this.step_max_mats = 0;
 
         this.potential_return = 5 + details.tec / 10;
-        this.bonus_potential_return = 7.5 /* toram_round(3 + details.tec / 51) */;
+        this.bonus_potential_return = 7.65 /* toram_round(3 + details.tec / 51) */;
 
         this.finished = false;
 
