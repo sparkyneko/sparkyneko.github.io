@@ -373,7 +373,7 @@ class Slot {
         value = Math.abs(value);
         const step_max = 100 / this.stat_data.pot;
         const change_per_step = this.stat_data.step || 1;
-        const max_normal_value = this.max ? this.max * change_per_step : step_max > MAX_STEPS ? MAX_STEPS * change_per_step : step_max * change_per_step;        console.log(max_normal_value);
+        const max_normal_value = this.max ? this.max * change_per_step : step_max > MAX_STEPS ? MAX_STEPS * change_per_step : step_max * change_per_step;
 
         if (value < max_normal_value) {
             value = value * (this.stat_data.step || 1);
