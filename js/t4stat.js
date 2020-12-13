@@ -371,11 +371,15 @@ class Slot {
     stepsToStat(value = this.futureSteps) {
         let is_negative = value < 0;
         value = Math.abs(value);
-        if (value < MAX_STEPS) {
+        const step_max = 100 / this.stat_data.pot;
+        const change_per_step = this.stat_data.step || 1;
+        const max_normal_value = this.max ? this.max * change_per_step : step_max > MAX_STEPS ? MAX_STEPS * change_per_step : step_max * change_per_step;        console.log(max_normal_value);
+
+        if (value < max_normal_value) {
             value = value * (this.stat_data.step || 1);
         } else {
             const bonus = this.stat_data.bonus || this.stat_data.step || 1;
-            value = MAX_STEPS * (this.stat_data.step || 1) + (value - MAX_STEPS) * bonus;
+            value = max_normal_value * (this.stat_data.step || 1) + (value - max_normal_value) * bonus;
         }
 
         if (is_negative) value *= -1;
@@ -384,13 +388,14 @@ class Slot {
 
     statToSteps(value = this.futureStat) {
         const input_is_negative = value < 0 ? -1 : 1;
+        const step_max = 100 / this.stat_data.pot;
         const change_per_step = this.stat_data.step || 1;
-        const max_normal_value = this.max ? this.max * change_per_step : MAX_STEPS * change_per_step;
+        const max_normal_value = this.max ? this.max * change_per_step : step_max > MAX_STEPS ? MAX_STEPS * change_per_step : step_max * change_per_step;
         let future_steps;
 
         if (Math.abs(value) > max_normal_value) {
             const overstep = this.stat_data.bonus || change_per_step;
-            future_steps = (MAX_STEPS + ((Math.abs(value) - max_normal_value) / overstep)) * input_is_negative;
+            future_steps = (max_normal_value + ((Math.abs(value) - max_normal_value) / overstep)) * input_is_negative;
         } else {
             future_steps= value / change_per_step;
         }
