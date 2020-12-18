@@ -603,7 +603,7 @@ class Stat {
     }
 
     getSuccessRate() {
-        if (typeof this.finished === 'number') return this.finished
+        if (typeof this.finished === 'number') return this.finished;
         let prev_pot = this.pot > this.recipe_pot ? this.pot : this.recipe_pot;
         
         let success_rate = 160 + (this.future_pot * 230) / prev_pot;
@@ -712,7 +712,7 @@ class Stat {
         }
 
         if (this.slots.every(slot => slot.stat_name) || this.future_pot <= 0) {
-            this.finished = true;
+            this.finished = this.getSuccessRate();
             this.lockAllSlots();
             this.updateFormulaDisplay();
             App.saveToStorage();
@@ -814,7 +814,7 @@ class Stat {
         }
         
         if (last_step.finished) {
-            this.finished = true;
+            this.finished = last_step.finished;
             this.lockAllSlots();
         }
 
@@ -884,6 +884,11 @@ class Stat {
             this.slots[slot_num].rawOverride(instr);
         }
 
+        if (instruction.finished) {
+            this.finished = instruction.finished;
+            this.lockAllSlots();
+        }
+
         // rebuild formula
         this.steps.buildCondensedFormula();
         this.updateFormulaDisplay();
@@ -914,7 +919,7 @@ class Formula {
     commitChanges() {
         if (!this.step_code_changes.length) return; // nothing changed
 
-        const finished = this.stat.slots.every(slot => slot.stat_name) || this.stat.future_pot <= 0 ? this.getSuccessRate() : false;
+        const finished = this.stat.slots.every(slot => slot.stat_name) || this.stat.future_pot <= 0 ? this.stat.getSuccessRate() : false ;
 
         this.formula.push({
             repeat: 1,
@@ -934,7 +939,6 @@ class Formula {
         this.step_changes = [];
         this.step_code_changes = [];
         this.buildCondensedFormula();
-
     }
 
     buildCondensedFormula() {
