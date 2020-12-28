@@ -23,7 +23,7 @@
     <h2 id="title" style="text-align: center; color: blue">Statting Simulator</h2>
     <center>
         <div style="border: solid 1px blue; padding: 5px; position: relative">
-            <button style="position: absolute; color: green; font-size: 8px; top: 2px; right: 1px; background: none; border: none" onclick="document.getElementById('extras-bin').hidden = !document.getElementById('extras-bin').hidden">(extras)</button>
+            <button style="position: absolute; color: green; font-size: 8px; top: 2px; right: 1px; background: none; border: none" onclick="document.getElementById('extras-bin').hidden = !document.getElementById('extras-bin').hidden">[settings]</button>
             <div id='extras-bin' style="position: absolute; top: 15px; right: 2px" hidden>
                 <table>
                     <tr>
@@ -58,8 +58,11 @@
     <div id="workbench" hidden>
         <table style="width: 100%; border-collapse: collapse; border-color: blue" border=1>
             <tr>
-                <td class=workbench rowspan=2 id='workspace' style="width: 50%" style="vertical-align: top;" valign=top>
-                    
+                <td class=workbench rowspan=2 style="width: 50%" style="vertical-align: top;" valign=top>
+                    <div style="position: relative; width: 100%;">
+                        <div id='stat-details' style="position: absolute; color: green; font-size: 8px; top: 0px; right: 0px"></div>
+                        <div id='workspace'></div>
+                    </div>
                 </td>
                 <td class=workbench style="width: 50%; vertical-align: top" id='material_display'>
                     

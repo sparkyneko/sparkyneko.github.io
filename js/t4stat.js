@@ -509,7 +509,7 @@ class Slot {
         }
 
         // add the 2 different types of potential return together
-        const totalpot = basicpot.add(bonuspot).multiply(double).multiply(change).result();
+        const totalpot = basicpot.add(bonuspot).multiply(double).multiply(-change).result();
 
         return toram_round(totalpot);
     }
@@ -671,7 +671,7 @@ class Stat {
     updatePotentialSuccessDisplay() {
         document.getElementById('potential_display').innerHTML = `Potential: ${this.future_pot} / ${this.pot}`;
         document.getElementById('success_rate_display').innerHTML = `Success Rate: ${this.getSuccessRate()}%`;
-        document.getElementById('confirm_button').disabled = this.pot === this.future_pot
+        document.getElementById('confirm_button').disabled = this.pot === this.future_pot;
     }
 
     updateMaterialCosts() {
@@ -686,11 +686,25 @@ class Stat {
 
     updateFormulaDisplay() {
         let display = this.steps.getDisplay();
-        if (this.finished) display += `<br />Success Rate: ${this.getSuccessRate()}%`;
-        document.getElementById('formula_display').innerHTML = `<span style="font-weight: bold; font-size: 12pt;">Steps</span><br /><br />${this.type === 'w' ? 'Weapon' : 'Armor'} - Potential: ${this.starting_pot}<br />${display}`;
+        if (typeof this.finished === 'number') {
+            display += `<br />Success Rate: ${this.getSuccessRate()}%`;
+            display += `<br /><span style="color: blue; font-size: 10px">Mats: ${Object.keys(this.mats).filter(mat => this.mats[mat]).map(mat => `${this.mats[mat]} ${mat}`).join(' / ')} (Max: ${this.max_mats})</span>`;
+        }
+        document.getElementById('formula_display').innerHTML = `<span style="font-weight: bold; font-size: 12pt;">Steps</span><br /><br />${this.type === 'w' ? 'Weapon' : 'Armor'} - Potential: ${this.starting_pot} ${this.getSettingsDisplay('<span style="color: green; font-size: 8px">', '</span>')}<br />${display}`;
         document.getElementById('redo_button').disabled = !this.steps.redo_queue.length;
         document.getElementById('undo_button').disabled = !this.steps.formula.length;
         document.getElementById('repeat_button').disabled = !this.steps.formula.length;
+    }
+    getSettingsDisplay(wrapperfront = '', wrapperback = '') {
+        let settings = [];
+        if (this.tec !== 255) settings.push(this.tec + ' TEC');
+        if (this.proficiency) settings.push(this.proficiency + ' proficiency');
+        if (!settings.length) return '';
+
+        return `${wrapperfront}(${settings.join(' / ')})${wrapperback}`;
+    }
+    updateSettingsDisplay() {
+        document.getElementById('stat-details').innerHTML = this.getSettingsDisplay();
     }
 
     loadDisplay() {
@@ -710,6 +724,7 @@ class Stat {
         document.getElementById('workspace').innerHTML = display;
         this.updateMaterialCosts();
         this.updateFormulaDisplay();
+        this.updateSettingsDisplay();
     }
 
     removeEmptySlots() {
@@ -1178,6 +1193,7 @@ class MainApp {
         current.updateFormulaDisplay();
         current.updateMaterialCosts();
         current.updatePotentialSuccessDisplay();
+        current.updateSettingsDisplay();
         
         for (let slot of current.slots) {
             slot.syncDisplayWithValues();
