@@ -141,6 +141,17 @@ function deep_clone (obj) {
     return newObj;
 }
 
+function clean_multiply(...nums) {
+    // make them all integers first
+    let deci = 0;
+    for (const num of nums) {
+        const decimals = num.toString().split('.')[1] || '';
+        if (deci < decimals.length) deci = decimals.length
+    }
+    const multiplier = Math.pow(10, deci);
+    nums = numbers.map(i)
+}
+
 class Slot {
     constructor(slot_num, stat) {
         this.currentStat = 0;
@@ -434,7 +445,8 @@ class Slot {
         for (let i = this.currentSteps + change; (change > 0 ? i <= this.futureSteps : i >= this.futureSteps); i += change) {
             cost += base_cost * Math.pow(i, 2);
         }
-        return toram_round(cost);
+
+        return cost * this.stat.getCostReduction();
     }
 
     getMatType() {
@@ -442,44 +454,64 @@ class Slot {
     }
 
     getCostDisplay() {
-        return `(${this.getCost()} ${this.getMatType()})`;
+        const cost = toram_round(this.getCost());
+        return `(${cost} ${this.getMatType()})`;
     }
 
     getPotentialChange() {
         if (this.currentSteps === this.futureSteps) return 0;
         const change = this.currentSteps > this.futureSteps ? -1 : 1;
+
         let bonus = 0;
         const abs_steps = Math.abs(this.futureSteps);
         const abs_current = Math.abs(this.currentSteps);
 
+        let current_steps = this.currentSteps + 0;
         let future_steps = this.futureSteps + 0;
 
         const step_max = 100 / this.stat_data.pot;
         const max_normal_steps = this.stat_data.max || (step_max > MAX_STEPS ? MAX_STEPS : step_max);
-        // potential is doubled for steps exceeding +/-20 if you are increasing/deceasing the stat in that direction
-        // potential consumed is still normal if increasing from -21 to -20
-        if (abs_steps > (max_normal_steps)) {
-            const bonus_start = max_normal_steps > abs_current ? max_normal_steps: abs_current;
-            bonus = (abs_steps - bonus_start) * this.stat_data.pot * 2;
-            future_steps = bonus_start * change;
+
+        const all = [current_steps, future_steps].sort((a, b) => a - b);
+        let diff = all[1] - all[0];
+        let bonus_diff = 0;
+
+        // trim anything below the standard minimum
+        if (all[0] < -max_normal_steps) {
+            let extras = Math.abs(all[0]) - max_normal_steps;
+            console.log('trim bottom', extras);
+            diff -= extras;
+            bonus_diff += extras;
         }
 
-        const normal_step_diff = Math.abs(future_steps - this.currentSteps);
-        let regular_pot_cost = normal_step_diff * this.stat_data.pot;
-        let total_pot_cost;
+        // trim anything above the standard maximum
+        if (all[1] > max_normal_steps) {
+            let extras = all[1] - max_normal_steps;
+            console.log('trim top', extras);
 
-        if (![this.stat.type, 'u', 'e'].includes(this.stat_data.type)) {
-            bonus *= 2;
-            regular_pot_cost *= 2;
+            diff -= extras;
+            bonus_diff += extras;
         }
-        
+
+        // trim bonus for cases where both values are in bonus range
+        if (diff < 0) {
+            bonus_diff += diff;
+            diff = 0;
+        }
+        const double = ![this.stat.type, 'u', 'e'].includes(this.stat_data.type) ? 2 : 1;
+        const basicpot = Calc(diff).multiply(this.stat_data.pot);
+        const bonuspot = Calc(bonus_diff).multiply(this.stat_data.pot).multiply(2);
+
+        // negatives have an extra multiplier
         if (change === -1) {
-            regular_pot_cost *= 0.01 * this.stat.potential_return;
-            bonus *= 0.01 * this.stat.bonus_potential_return;
+            basicpot.multiply(this.stat.potential_return).multiply(0.01);
+            bonuspot.multiply(this.stat.bonus_potential_return).multiply(0.01)
         }
-        total_pot_cost = change * (regular_pot_cost + bonus);
 
-        return toram_round(total_pot_cost * -1);
+        // add the 2 different types of potential return together
+        const totalpot = basicpot.add(bonuspot).multiply(double).multiply(change).result();
+
+        return toram_round(totalpot);
     }
 
     // automation
@@ -580,8 +612,12 @@ class Stat {
         this.max_mats = 0;
         this.step_max_mats = 0;
 
-        this.potential_return = 5 + details.tec / 10;
+        this.tec = parseInt(details.tec) || 0;
+
+        this.potential_return = 5 + this.tec / 10;
         this.bonus_potential_return = this.potential_return / 4;
+
+        this.proficiency = parseInt(details.proficiency) || 0;
 
         this.finished = false;
 
@@ -600,6 +636,11 @@ class Stat {
 
         let penalty = penalty_values.reduce((a, b) => a + b);
         return 1 + 0.01 * penalty;
+    }
+
+    getCostReduction() {
+        let percent = Math.floor(this.proficiency / 10) + Math.floor(this.proficiency / 50);
+        return 0.01 * (100 - percent);
     }
 
     getSuccessRate() {
@@ -692,12 +733,15 @@ class Stat {
             const used_mat = slot.getMatType();
             const used_mat_amount = slot.getCost();
 
-            this.mats[used_mat] += used_mat_amount;
             this.step_mats[used_mat] += used_mat_amount;
 
             // log down in formula what steps were
             this.steps.gatherChanges(slot.slot_num, slot.stat_name, slot.futureSteps - slot.currentSteps, slot.futureStat - slot.currentStat, slot.new_stat);
             slot.confirm();
+        }
+        for (const mat in this.step_mats) {
+            this.step_mats[mat] = toram_round(this.step_mats[mat])
+            this.mats[mat] += this.step_mats[mat];
         }
 
         this.step_max_mats = Object.keys(this.step_mats).map(m => this.step_mats[m]).sort((a, b) => b - a)[0];
@@ -844,6 +888,8 @@ class Stat {
         return {
             formula: deep_clone(this.steps.formula),
             settings: {
+                tec: this.tec,
+                proficiency: this.proficiency,
                 type: this.type,
                 recipe_pot: this.recipe_pot,
                 future_pot: this.future_pot,
@@ -1011,6 +1057,24 @@ class MainApp {
         localStorage.setItem('instance_data', JSON.stringify(data_to_store));
     }
 
+    saveSettings(settings) {
+        localStorage.setItem('extra_settings', JSON.stringify(settings));
+    }
+
+    loadSettings() {
+        let raw = localStorage.getItem('extra_settings');
+
+        let data;
+        try {
+            data = JSON.parse(raw);
+        } catch (e) {}
+
+        if (!data) return;
+
+        document.getElementById('tec').value = data.tec || 255;
+        document.getElementById('proficiency').value = data.proficiency || 0;
+    }
+
     getNewWorkspaceId() {
         let id = 0;
         do {
@@ -1056,18 +1120,25 @@ class MainApp {
     }
 
     spawn(id) {
+        // base
         const starting_pot = document.getElementById('starting_pot').value;
         const recipe_pot = document.getElementById('recipe_pot').value;
         const weap_arm = document.getElementById('weap_arm').value;
         const workspace_id = id || this.getNewWorkspaceId();
+
+        // customize
+        const tec = document.getElementById('tec').value;
+        const proficiency = document.getElementById('proficiency').value;
+
+        this.saveSettings({tec, proficiency});
 
         const details = {
             weap_arm,
             starting_pot,
             recipe_pot,
             workspace_id,
-            tec: 255,
-            proficiency: 0,
+            tec,
+            proficiency
         };
 
         this.stats[workspace_id] = new Stat(details);
