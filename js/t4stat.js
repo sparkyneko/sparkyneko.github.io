@@ -688,9 +688,11 @@ class Stat {
         let display = this.steps.getDisplay();
         if (typeof this.finished === 'number') {
             display += `<br />Success Rate: ${this.getSuccessRate()}%`;
+            if (this.tec !== 255) display += ` <span style="color: red; font-size: 8px">(${this.tec} TEC)</span>`
             display += `<br /><span style="color: blue; font-size: 10px">Mats: ${Object.keys(this.mats).filter(mat => this.mats[mat]).map(mat => `${this.mats[mat]} ${mat}`).join(' / ')} (Max: ${this.max_mats})</span>`;
+            if (this.proficiency) display += ` <span style="color: green; font-size: 8px">(${this.proficiency} proficiency)</span>`
         }
-        document.getElementById('formula_display').innerHTML = `<span style="font-weight: bold; font-size: 12pt;">Steps</span><br /><br />${this.type === 'w' ? 'Weapon' : 'Armor'} - Potential: ${this.starting_pot} ${this.getSettingsDisplay('<span style="color: green; font-size: 8px">', '</span>')}<br />${display}`;
+        document.getElementById('formula_display').innerHTML = `<span style="font-weight: bold; font-size: 12pt;">Steps</span><br /><br />${this.type === 'w' ? 'Weapon' : 'Armor'} - Potential: ${this.starting_pot}<br />${display}`;
         document.getElementById('redo_button').disabled = !this.steps.redo_queue.length;
         document.getElementById('undo_button').disabled = !this.steps.formula.length;
         document.getElementById('repeat_button').disabled = !this.steps.formula.length;
@@ -1019,7 +1021,7 @@ class Formula {
     }    
 
     getDisplay() {
-        const display = this.condensed_formula.map((step, index) => `#${index + 1}. ${step.text}${step.repeat > 1 ? ` (x${step.repeat})` : ''} <span style="color: gray">(${step.pot_after}pot)</span>`);
+        const display = this.condensed_formula.map((step, index) => `<strong>#${index + 1}.</strong> ${step.text}${step.repeat > 1 ? ` (x${step.repeat})` : ''} <span style="color: gray">(${step.pot_after}pot)</span>`);
         return display.join('<br />')
     }
 
