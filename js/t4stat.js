@@ -993,7 +993,7 @@ class Formula {
             step_mats: this.stat.step_mats,
 
             max_mats_before: this.stat.max_mats,
-            max_mats_after: this.stat.step_max_mats || this.max_mats,
+            max_mats_after: this.stat.step_max_mats || this.stat.max_mats,
 
             finished
         })
