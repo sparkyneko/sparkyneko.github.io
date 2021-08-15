@@ -103,7 +103,7 @@ const OPTIONS = [
 ];
 
 function toram_round(value) {
-    if (value > 1) return Math.floor(value);
+    if (value > 0) return Math.floor(value);
     return Math.ceil(value);
 }
 
