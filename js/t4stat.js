@@ -174,8 +174,12 @@ class Slot {
     }
 
     buildDisplay() {
-        let buffer = `<select id="slot${this.slot_num}" onchange="App.getCurrent().slots[${this.slot_num}].onUpdate()"><option value=0>CHOOSE STAT</option>`;
-        let last_cat = '';
+        let buffer = `
+        <div class="mt-1">
+            <select class = "form-control form-control-sm" id="slot${this.slot_num}" onchange="App.getCurrent().slots[${this.slot_num}].onUpdate()"><option value=0>CHOOSE STAT</option>
+        
+        `;
+        let last_cat = '';  
         let cat_id = 0;
 
         for (let data of OPTIONS) {
@@ -190,9 +194,14 @@ class Slot {
             buffer += `<option value="${cat_id}">${data.name}</option>`;
         }
 
-        buffer += '</select>';
+        buffer += '</select> </div>';
 
-        buffer += `&nbsp;&nbsp;<input autocomplete="off" type="text" maxlength=4 size=4 disabled id="input${this.slot_num}" value=0 onkeydown="App.getCurrent().slots[${this.slot_num}].onKeyPress(event)" oninput="App.getCurrent().slots[${this.slot_num}].onUpdate()" style="color: blue"></input> <span id="matcost${this.slot_num}" style="color: green; font-size: 8pt"></span>`
+        buffer += `
+        <div class="mx-1 mt-1">
+            <input class="form-control form-control-sm" autocomplete="off" type="text" disabled id="input${this.slot_num}" value=0 onkeydown="App.getCurrent().slots[${this.slot_num}].onKeyPress(event)" oninput="App.getCurrent().slots[${this.slot_num}].onUpdate()" style="color: blue"></input> 
+            <span id="matcost${this.slot_num}" style="color: green"></span>
+        </div>`
+        
         return buffer;
     }
 
@@ -675,7 +684,17 @@ class Stat {
     }
 
     updateMaterialCosts() {
-        let buffer = `<table style="width: 100%"><tr><th style="width: 30%; text-align: left">Material</th><th style="text-align: left">Amount</th></tr>`
+        let buffer = `
+        <br/>
+        <table class="table table-borderless card">
+            <tr>
+                <th>
+                    Material
+                </th>
+                <th style="text-align: left">
+                    Amount
+                </th>
+            </tr>`
         for (let mat in this.mats) {
             buffer += `<tr><td>${mat}</td><td>${this.mats[mat]}</td></tr>`;
         }
@@ -690,7 +709,7 @@ class Stat {
             display += `<br />Success Rate: ${this.getSuccessRate()}%`;
             if (this.tec !== 255) display += ` <span style="color: red; font-size: 8px">(${this.tec} TEC)</span>`
             display += `<br /><span style="color: blue; font-size: 10px">Mats: ${Object.keys(this.mats).filter(mat => this.mats[mat]).map(mat => `${this.mats[mat]} ${mat}`).join(' / ')} (Max: ${this.max_mats})</span>`;
-            if (this.proficiency) display += ` <span style="color: green; font-size: 8px">(${this.proficiency} proficiency)</span>`
+            if (this.proficiency) display += `<div> <span style="color: green;">(${this.proficiency} proficiency)</span> </div>`
         }
         document.getElementById('formula_display').innerHTML = `<span style="font-weight: bold; font-size: 12pt;">Steps</span><br /><br />${this.type === 'w' ? 'Weapon' : 'Armor'} - Potential: ${this.starting_pot}<br />${display}`;
         document.getElementById('redo_button').disabled = !this.steps.redo_queue.length;
@@ -714,15 +733,45 @@ class Stat {
         let success_rate = this.getSuccessRate();
         let buffer = '';
         for (const slot of this.slots) {
-            buffer += slot.buildDisplay() + '<br />'
+            buffer += slot.buildDisplay()
         }
 
-        const confirm = `<button onclick="App.getCurrent().confirm()" id='confirm_button' disabled>Confirm</button>`;
-        const repeat = `<button id="repeat_button" onclick="App.getCurrent().repeat()" disabled>Repeat</button>`;
-        const undo = `<button onclick="App.getCurrent().undo()" disabled id="undo_button">Undo</button>`;
-        const redo = `<button onclick="App.getCurrent().redo()" disabled id="redo_button">Redo</button>`;
+        const confirm = `<button style="width: 100px;"  class="btn-primary btn" onclick="App.getCurrent().confirm()" id='confirm_button' disabled>Confirm</button>`;
+        const repeat = `<button  style="width: 100px;" class="btn-success btn" id="repeat_button" onclick="App.getCurrent().repeat()" disabled>Repeat</button>`;
+        const undo = `<button  style="width: 100px;" class="btn-secondary btn" onclick="App.getCurrent().undo()" disabled id="undo_button">Undo</button>`;
+        const redo = `<button  style="width: 100px;" class="btn-danger btn" onclick="App.getCurrent().redo()" disabled id="redo_button">Redo</button>`;
 
-        const display = `<table><tr><td style="text-align: center" id='potential_display'>Potential: ${potential}</td></tr><tr><td>${buffer}</td></tr><tr><td style="text-align: center" id="success_rate_display">Success Rate: ${this.getSuccessRate()}%</td></tr><tr><td style="text-align: center">${confirm} ${repeat} ${undo} ${redo}</td></tr></table>`;
+        const display = `
+
+        <table class="table card">
+            <tr>
+                <td style="text-align: center" id='potential_display'>
+                    Potential: ${potential}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="d-flex flex-wrap">
+                        ${buffer}
+                    </div>
+                </td>
+            </tr>
+            <tr>
+            <td style="text-align: center" id="success_rate_display">
+                Success Rate: ${this.getSuccessRate()}%</td>
+            </tr>
+            <tr>
+                <td style="text-align: center">
+                <div class="d-flex flex-row flex-wrap justify-content-center p-1">
+                <div class="mr-1 mb-1"> ${confirm} </div>
+                <div class="mr-1">${repeat}</div>
+                <div class="mr-1">${undo} </div>
+                <div class="mr-1">${redo}</div>
+                </div>
+                
+                </td>
+            </tr>
+        </table>`;
         document.getElementById('workspace').innerHTML = display;
         this.updateMaterialCosts();
         this.updateFormulaDisplay();
@@ -1119,7 +1168,7 @@ class MainApp {
             const instance = this.stats[workspace_id]
             const focused = workspace_id === this.current;
 
-            buffer.push(`<div style="display: inline-block; border: solid 1px blue; border-radius: 7px; padding: 3px;${focused ? ' background-color: lightpink' :' background-color: none'}"><button style="border: none; background: none" onclick="App.setCurrent('${workspace_id}')">${workspace_id}</button><button onclick="App.despawn('${workspace_id}')" style="color: red; border: none; background: none">x</button></div>`);
+            buffer.push(`<div class="card shadow-sm" style="display: inline-block; border: solid 1px green; border-radius: 7px; padding: 3px;${focused ? ' background-color: lightpink' :' background-color: none'}"><button style="border: none; background: none" onclick="App.setCurrent('${workspace_id}')">${workspace_id}</button><button onclick="App.despawn('${workspace_id}')" style="color: red; border: none; background: none">x</button></div>`);
         }
         return buffer.join(' ')
     }
