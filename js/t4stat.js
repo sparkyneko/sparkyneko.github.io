@@ -141,17 +141,6 @@ function deep_clone (obj) {
     return newObj;
 }
 
-function clean_multiply(...nums) {
-    // make them all integers first
-    let deci = 0;
-    for (const num of nums) {
-        const decimals = num.toString().split('.')[1] || '';
-        if (deci < decimals.length) deci = decimals.length
-    }
-    const multiplier = Math.pow(10, deci);
-    nums = numbers.map(i)
-}
-
 class Slot {
     constructor(slot_num, stat) {
         this.currentStat = 0;
