@@ -1,0 +1,114 @@
+<script>
+
+const PROBABILITIES = {
+    0: 100,
+    1: 98,
+    2: 96,
+    3: 94, 
+    4: 90,
+    5: 85,
+    6: 80,
+    7: 70,
+    8: 50,
+    9: 20,
+    10: 20,
+    11: 20,
+    12: 80,
+    13: 60,
+    14: 50,
+    15: 40,
+    16: 40,
+    17: 80,
+    18: 60,
+    19: 60,
+}
+let RUNS = 10000000;
+
+let values = [];
+let total = 0;
+
+let min = 0;
+let max = 20;
+
+class IOrun {
+    constructor(start = 0, end = 20) {
+        this.level = start;
+        this.end = end;
+        this.attempts = 0;
+
+        this.run();
+    }
+
+    run() {
+        do {
+            this.upgrade();
+        } while (this.level < this.end)
+        values.push(this.attempts);
+        total += this.attempts;
+    }
+
+    upgrade() {
+        let prob = Math.random() * 100;
+        if (this.level >= 3) this.attempts++;
+        if (prob <= PROBABILITIES[this.level]) {
+            // success
+            this.level++;
+        } else {
+            if (this.level >= 18) this.level -= 3;
+            else if (this.level >= 12) this.level--;
+        }
+    }
+}
+
+// run attempts
+
+
+function run() {
+    // reset
+    total = 0;
+    values = [];
+    
+    
+    min = document.getElementById('min').value;
+    max = document.getElementById('max').value;
+    RUNS = document.getElementById('trials').value;
+
+    min = parseInt(min);
+    max = parseInt(max);
+    RUNS = parseInt(RUNS);
+
+    if (!max || min === NaN || max <= min || max > 20 || min < 0 || !RUNS || RUNS <= 0) return alert('Invalid parameters')
+    for (let i = 0; i < RUNS; i++) new IOrun(min, max);
+    const mean = total / RUNS;
+
+    // calculate STD
+    let sum = 0;
+
+    for (const value of values) {
+        sum += Math.pow((value - mean), 2);
+    }
+
+    const std = Math.pow((sum * (1  / RUNS)), 0.5);
+
+    document.getElementById('results').innerHTML = `${RUNS} simulations from +${min} to +${max} - IOs needed:<br />${mean} ± ${std}`;
+}
+</script>
+
+
+<body>
+    <h4>IO Probability calculator</h4>
+    <br />
+    <table style="width: 100%">
+        <tr>
+            <td style="border: 1px dashed black; border-radius: 10px; padding: 10px;">
+                Start: <input id="min" value="0"></input><br />
+                Finish: <input id="max" value="20"></input><br />
+                Trials: <input id="trials" value="1000000"></input><br />
+                <button onclick="run()">Start!</button>
+            </td>
+            <td id="results" style="border: 1px dashed black; border-radius: 10px; padding: 10px;">
+                ...
+            </td>
+        </tr>
+    </table>
+</body>
