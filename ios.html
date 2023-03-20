@@ -26,6 +26,7 @@ let RUNS = 10000000;
 
 let values = [];
 let total = 0;
+let frequency = {};
 
 let min = 0;
 let max = 20;
@@ -45,6 +46,9 @@ class IOrun {
         } while (this.level < this.end)
         values.push(this.attempts);
         total += this.attempts;
+
+        if (!frequency[this.attempts]) frequency[this.attempts] = 0;
+        frequency[this.attempts]++;
     }
 
     upgrade() {
@@ -67,7 +71,7 @@ function run() {
     // reset
     total = 0;
     values = [];
-    
+    frequency = {};
     
     min = document.getElementById('min').value;
     max = document.getElementById('max').value;
@@ -76,11 +80,11 @@ function run() {
     min = parseInt(min);
     max = parseInt(max);
     RUNS = parseInt(RUNS);
-
+    
     if (!max || min === NaN || max <= min || max > 20 || min < 0 || !RUNS || RUNS <= 0) return alert('Invalid parameters')
     for (let i = 0; i < RUNS; i++) new IOrun(min, max);
     const mean = total / RUNS;
-
+    
     // calculate STD
     let sum = 0;
 
@@ -90,7 +94,26 @@ function run() {
 
     const std = Math.pow((sum * (1  / RUNS)), 0.5);
 
-    document.getElementById('results').innerHTML = `${RUNS} simulations from +${min} to +${max} - IOs needed:<br />${mean} ± ${std}`;
+    const mean_display = `${RUNS} simulations from +${min} to +${max} - IOs needed:<br />${mean} ± ${std}`;
+
+    // calculate percentile and median
+    values = []; 
+    let keys = Object.keys(frequency).sort((a, b) => a - b); // make sure they're numbers and not strings
+    for (const key of keys) {
+        let occurences = frequency[key];
+        values.push(...new Array(occurences).fill().map(v => key));
+    }
+
+    let percentiles = [];
+    for (let i = 0; i < 10; i++) {
+        const index = Math.floor(0.1 * i * RUNS);
+        percentiles.push(`${i * 10}th percentile: ${values[index]}`);
+    }
+    percentiles.push(`Max: ${values[RUNS - 1]}`);
+
+    const percentile_display = percentiles.join('<br />');
+
+    document.getElementById('results').innerHTML = mean_display + '<br /><br /><br /><br />' + percentile_display
 }
 </script>
 
