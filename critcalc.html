@@ -1,0 +1,162 @@
+<script>
+
+function calculate() {
+
+    let bf = document.getElementById('bf').checked;
+    let nm = document.getElementById('nm').checked;
+    let cr = document.getElementById('cr').value;
+    let cdmg = document.getElementById('cdmg').value;
+    let br = document.getElementById('br').value;
+    let ig = document.getElementById('ig').value;
+
+
+    let ten = document.getElementById('ten').value;
+    let block = document.getElementById('blk').value;
+
+    cr = Number(cr);
+    br = Number(br);
+    cdmg = 150 + Number(cdmg);
+    ten = Number(ten);
+    block = Number(block);
+
+    if (bf) {
+        cr += 15;
+        cdmg += 54.2;
+    }
+
+    if (nm) {
+        cdmg += 50
+        cr += 25
+    }
+
+    let net_cr = cr - ten;
+    let net_bl = block - br;
+
+    net_cr = net_cr > 100 ? 100 : net_cr < 0 ? 0 : net_cr;
+    net_bl = net_bl > 100 ? 100 : net_bl < 0 ? 0 : net_bl; 
+
+    // console.log(cr, br, ten, block)
+    // console.log(net_cr, net_bl)
+
+    let output = '', analysis = '';
+
+    // new formula for over 100 total
+    if (net_cr + net_bl > 100) {
+        // box 1
+
+        let crit_rate = net_cr / (net_cr + net_bl);
+        let block_rate = net_bl / (net_cr + net_bl)
+
+        // console.log('fin', crit_rate, block_rate);
+
+        output += `Chance of landing a <strong>critical hit</strong>: ${(crit_rate * 100).toFixed(2)}%<br />`;
+        output += `If an attack does not crit, chance of landing a <strong>blocked hit</strong>: ${(block_rate * 100).toFixed(2)}%<br />`;
+        
+        output +="<br />"
+        output += `Overall chances:<br />`
+
+        let crit_chance = crit_rate;
+
+        let white_chance = (1 - crit_chance) * (1 - block_rate);
+        let block_chance = (1 - crit_chance) * block_rate;
+        let total_dmg = (crit_chance) * (cdmg / 100) + (white_chance) + (block_chance) * (1 - (0.5 * (1 - (ig / 100))));
+
+        output += `Crit (yellow): ${(crit_chance * 100).toFixed(2)}%<br />`
+        output += `Regular (white): ${(white_chance * 100).toFixed(2)}%<br />`
+        output += `Blocked (gray): ${(block_chance * 100).toFixed(2)}%<br />`;
+        output += `You will do ${(total_dmg * 100).toFixed(2)}% of your base (white) damage.`
+        document.getElementById('results').innerHTML = output;
+
+        // box 2
+        let crit_chance_o = net_cr / 100;
+        if (crit_chance_o > 1) crit_chance_o = 1;
+
+        let white_chance_o = (1 - crit_chance_o) * (1 - (net_bl / 100));
+        let block_chance_o = (1 - crit_chance_o) * (net_bl / 100);
+        let total_dmg_o = (crit_chance_o) * (cdmg / 100) + (white_chance_o) + (block_chance_o) * (1 - (0.5 * (1 - (ig / 100))));
+
+        analysis += "As the final crit rate and final block rate have a sum greater than 100, the block rate will thus have an effect on crit rate calculations, and vice versa for block."
+
+        analysis += `<br /><br />Old overall chances (before patch 1.32):<br />`;
+
+        analysis += `Crit (yellow): ${(crit_chance_o * 100).toFixed(2)}%<br />`
+        analysis += `Regular (white): ${(white_chance_o * 100).toFixed(2)}%<br />`
+        analysis += `Blocked (gray): ${(block_chance_o * 100).toFixed(2)}%<br />`;
+        analysis += `Average damage: ${(total_dmg_o * 100).toFixed(2)}% of base.`
+        
+        analysis += `<br /><br /> Total damage lost with new crit formula: ${((1 - (total_dmg / total_dmg_o)) * 100).toFixed(2)}%`;
+        document.getElementById('results2').innerHTML = analysis;
+
+
+        // old formula for under 100 total
+    } else {
+
+        // box 1
+        output += `Chance of landing a <strong>critical hit</strong>: ${net_cr}%<br />`;
+        output += `If an attack does not crit, chance of landing a <strong>blocked hit</strong>: ${net_bl}%<br />`;
+        
+        output +="<br />"
+        output += `Overall chances:<br />`
+
+        let crit_chance = net_cr / 100;
+        if (crit_chance > 1) crit_chance = 1;
+
+        let white_chance = (1 - crit_chance) * (1 - (net_bl / 100));
+        let block_chance = (1 - crit_chance) * (net_bl / 100);
+        let total_dmg = (crit_chance) * (cdmg / 100) + (white_chance) + (block_chance) * (1 - (0.5 * (1 - (ig / 100))));
+
+        output += `Crit (yellow): ${(crit_chance * 100).toFixed(2)}%<br />`
+        output += `Regular (white): ${(white_chance * 100).toFixed(2)}%<br />`
+        output += `Blocked (gray): ${(block_chance * 100).toFixed(2)}%<br />`;
+        output += `You will do ${(total_dmg * 100).toFixed(2)}% of your base (white) damage.`
+        document.getElementById('results').innerHTML = output;
+
+        // box 2
+        analysis += "As the final crit rate and final block rate have a sum less than 100, the block rate thus has no effect on crit rate calculations"
+        document.getElementById('results2').innerHTML = analysis;
+    }
+
+}
+
+function update() {
+
+}
+</script>
+    
+    
+    <body onload="calculate()">
+        <center><h2>Crit calculator</h2></center>
+        <br />
+        <table style="width: 100%">
+            <tr>
+                <td style="border: 1px dashed black; border-radius: 10px; padding: 10px; width: 50%" rowspan=2>
+                        <strong>Your stats:</strong><br />
+                        Critical Rate: <input id="cr" value=100 type="number"></input>% <span style="color: gray">(Total: <span id="total_cr">100</span>%)</span><br />
+                        Critical Damage: <input id="cdmg" value="0" type="number" step="any"></input>% <span style="color: gray">(Total: <span id="total_cdmg">150</span>%)</span><br />
+                        <input type="checkbox" id="bf" name="bf" value="Break Free">Lv4 Break Free buff
+                        <input type="checkbox" id="nm" name="nm" value="NeverMiss">NeverMiss buff
+                        <br />
+                        Break Rate: <input id="br" value=100 type="number" step="any"></input><br />
+                        Ignores Block: <input id="ig" value=0 type="number" step="any"></input>
+
+                        <br /><br /><br />
+                        <strong>Opponent's stats: </strong><br />
+                        Crit Immunity Rate: <input id="ten" value=100 type="number" step="any"></input>%<br />
+                        Block Rate: <input id="blk" value=100 type="number" step="any"></input>
+                        <br /><span style="font-size: 6pt; color: gray">(Lv2 Fire Echo = 8%, Lv3 Fire Echo = 16%, 4% per Holy Echo level up to 16% )</span>
+                        <br /><br />
+
+                        <button onclick="calculate()">Calculate!</button>
+                </td>
+                <td id="results" style="border: 1px dashed blue; border-radius: 10px; padding: 10px;" >
+                    ...
+                </td>
+            </tr>
+            <tr>
+                <td id="results2" style="border: 1px dashed red; border-radius: 10px; padding: 10px;" >
+                    ...
+                </td>
+            </tr>
+        </table>
+    </body>
+    
