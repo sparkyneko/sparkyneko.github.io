@@ -85,14 +85,14 @@ function calculate() {
         analysis += `Average damage: ${(total_dmg_o * 100).toFixed(2)}% of base.`
         
         analysis += `<br /><br /> Total damage lost with new crit formula: ${((1 - (total_dmg / total_dmg_o)) * 100).toFixed(2)}%`;
-        document.getElementById('results2').innerHTML = analysis;
+        document.getElementById('results2').innerHTML = analysis + `<div style="position: absolute; top: 5px; right: 5px; font-size: 10pt; color: red;">(These calculations assume both parties are of the same level.)</div>`;
 
 
         // old formula for under 100 total
     } else {
 
         // box 1
-        output += `Chance of landing a <strong>critical hit</strong>: ${net_cr}%<br />`;
+        output += `Chance of landing a <strong>critical hit</strong>: ${net_cr.toFixed(2)}%<br />`;
         output += `If an attack does not crit, chance of landing a <strong>blocked hit</strong>: ${net_bl}%<br />`;
         
         output +="<br />"
@@ -113,7 +113,7 @@ function calculate() {
 
         // box 2
         analysis += "As the final crit rate and final block rate have a sum less than 100, the block rate thus has no effect on crit rate calculations"
-        document.getElementById('results2').innerHTML = analysis;
+        document.getElementById('results2').innerHTML = analysis + `<div style="position: absolute; top: 5px; right: 5px; font-size: 10pt; color: red;">(These calculations assume both parties are of the same level.)</div>`;
     }
 
 }
@@ -147,6 +147,7 @@ function update() {
     
     
     <body onload="calculate()">
+        <br />
         <center><h2>Crit calculator</h2></center>
         <br />
         <table style="width: 100%">
@@ -170,8 +171,9 @@ function update() {
 
                         <button onclick="calculate()" style="color: green; background-color: lightgreen; border: 1px solid green; padding: 5px;">Calculate!</button>
                 </td>
-                <td id="results" style="border: 1px dashed blue; border-radius: 10px; padding: 10px;" >
+                <td id="results" style="border: 1px dashed blue; border-radius: 10px; padding: 10px; position: relative;" >
                     ...
+                    <div style="position: absolute; top: 5px; right: 5px; font-size: 10pt; color: red;">(These calculations assume both parties are of the same level.)</div>
                 </td>
             </tr>
             <tr>
