@@ -119,7 +119,29 @@ function calculate() {
 }
 
 function update() {
+    let bf = document.getElementById('bf').checked;
+    let nm = document.getElementById('nm').checked;
+    let cr = document.getElementById('cr').value;
+    let cdmg = document.getElementById('cdmg').value;
 
+
+    cr = Number(cr);
+    cdmg = 150 + Number(cdmg);
+
+    if (bf) {
+        cr += 15;
+        cdmg += 54.2;
+    }
+
+    if (nm) {
+        cdmg += 50
+        cr += 25
+    }
+
+    document.getElementById('total_cr').innerHTML = cr;
+    document.getElementById('total_cdmg').innerHTML = cdmg;
+
+    
 }
 </script>
     
@@ -131,22 +153,22 @@ function update() {
             <tr>
                 <td style="border: 1px dashed black; border-radius: 10px; padding: 10px; width: 50%" rowspan=2>
                         <strong>Your stats:</strong><br />
-                        Critical Rate: <input id="cr" value=100 type="number"></input>% <span style="color: gray">(Total: <span id="total_cr">100</span>%)</span><br />
-                        Critical Damage: <input id="cdmg" value="0" type="number" step="any"></input>% <span style="color: gray">(Total: <span id="total_cdmg">150</span>%)</span><br />
-                        <input type="checkbox" id="bf" name="bf" value="Break Free">Lv4 Break Free buff
-                        <input type="checkbox" id="nm" name="nm" value="NeverMiss">NeverMiss buff
+                        Critical Rate: <input id="cr" value=100 type="number" oninput="update()"></input>% <span style="color: gray">(Total: <span id="total_cr">100</span>%)</span><br />
+                        Critical Damage: <input id="cdmg" value="0" type="number" step="any" oninput="update()"></input>% <span style="color: gray">(Total: <span id="total_cdmg">150</span>%)</span><br />
+                        <input type="checkbox" id="bf" name="bf" value="Break Free" oninput="update()">Lv4 Break Free buff
+                        <input type="checkbox" id="nm" name="nm" value="NeverMiss" oninput="update()">NeverMiss buff
                         <br />
-                        Break Rate: <input id="br" value=100 type="number" step="any"></input><br />
-                        Ignores Block: <input id="ig" value=0 type="number" step="any"></input>
+                        Break Rate: <input id="br" value=100 type="number" step="any"></input>%<br />
+                        Ignores Block: <input id="ig" value=0 type="number" step="any"></input>%
 
                         <br /><br /><br />
                         <strong>Opponent's stats: </strong><br />
                         Crit Immunity Rate: <input id="ten" value=100 type="number" step="any"></input>%<br />
-                        Block Rate: <input id="blk" value=100 type="number" step="any"></input>
-                        <br /><span style="font-size: 6pt; color: gray">(Lv2 Fire Echo = 8%, Lv3 Fire Echo = 16%, 4% per Holy Echo level up to 16% )</span>
+                        Block Rate: <input id="blk" value=100 type="number" step="any"></input>%
+                        <br /><span style="font-size: 8pt; color: gray">(Lv2 Fire Echo = 8%, Lv3 Fire Echo = 16%, 4% per Holy Echo level up to 16%)</span>
                         <br /><br />
 
-                        <button onclick="calculate()">Calculate!</button>
+                        <button onclick="calculate()" style="color: green; background-color: lightgreen; border: 1px solid green; padding: 5px;">Calculate!</button>
                 </td>
                 <td id="results" style="border: 1px dashed blue; border-radius: 10px; padding: 10px;" >
                     ...
