@@ -32,8 +32,8 @@ function calculate() {
     let net_cr = cr - ten;
     let net_bl = block - br;
 
-    net_cr = net_cr > 100 ? 100 : net_cr < 0 ? 0 : net_cr;
-    net_bl = net_bl > 100 ? 100 : net_bl < 0 ? 0 : net_bl; 
+    net_cr = net_cr < 0 ? 0 : net_cr;
+    net_bl = net_bl < 0 ? 0 : net_bl; 
 
     // console.log(cr, br, ten, block)
     // console.log(net_cr, net_bl)
@@ -47,15 +47,15 @@ function calculate() {
         let crit_rate = net_cr / (net_cr + net_bl);
         let block_rate = net_bl / (net_cr + net_bl)
 
+        let crit_chance = crit_rate > 100 ? 100 : crit_rate;
         // console.log('fin', crit_rate, block_rate);
 
-        output += `Chance of landing a <strong>critical hit</strong>: ${(crit_rate * 100).toFixed(2)}%<br />`;
-        output += `If an attack does not crit, chance of landing a <strong>blocked hit</strong>: ${(block_rate * 100).toFixed(2)}%<br />`;
+        output += `Chance of landing a <strong>critical hit</strong>: ${(crit_chance * 100).toFixed(2)}%<br />`;
+        output += `If an attack does not crit, chance of landing a <strong>blocked hit</strong>: ${((block_rate > 100 ? 100 : block_rate) * 100).toFixed(2)}%<br />`;
         
         output +="<br />"
         output += `Overall chances:<br />`
 
-        let crit_chance = crit_rate;
 
         let white_chance = (1 - crit_chance) * (1 - block_rate);
         let block_chance = (1 - crit_chance) * block_rate;
@@ -92,8 +92,8 @@ function calculate() {
     } else {
 
         // box 1
-        output += `Chance of landing a <strong>critical hit</strong>: ${net_cr.toFixed(2)}%<br />`;
-        output += `If an attack does not crit, chance of landing a <strong>blocked hit</strong>: ${net_bl}%<br />`;
+        output += `Chance of landing a <strong>critical hit</strong>: ${(net_cr > 100 ? 100 : net_cr).toFixed(2)}%<br />`;
+        output += `If an attack does not crit, chance of landing a <strong>blocked hit</strong>: ${(net_bl > 100 ? 100 : net_bl).toFixed(2)}%<br />`;
         
         output +="<br />"
         output += `Overall chances:<br />`
