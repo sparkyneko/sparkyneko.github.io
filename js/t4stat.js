@@ -686,7 +686,12 @@ class Stat {
             display += `<br />Success Rate: ${this.getSuccessRate()}%`;
             if (this.tec !== 255) display += ` <span style="color: red; font-size: 8px">(${this.tec} TEC)</span>`
             display += `<br /><span style="color: blue; font-size: 10px">Mats: ${Object.keys(this.mats).filter(mat => this.mats[mat]).map(mat => `${this.mats[mat]} ${mat}`).join(' / ')} (Max: ${this.max_mats})</span>`;
-            if (this.proficiency) display += ` <span style="color: green; font-size: 8px">(${this.proficiency} proficiency)</span>`
+            
+            let message = [];
+            if (this.proficiency) message.push(`${this.proficiency} proficiency`);
+            if (this.mat_reduction) message.push('10% mat reduction passive');
+            message = message.join(' + ')
+            if (message) display += ` <span style="color: green; font-size: 8px">(${message})</span>`
         }
         document.getElementById('formula_display').innerHTML = `<span style="font-weight: bold; font-size: 12pt;">Steps</span><br /><br />${this.type === 'w' ? 'Weapon' : 'Armor'} - Potential: ${this.starting_pot}<br />${display}`;
         document.getElementById('redo_button').disabled = !this.steps.redo_queue.length;
