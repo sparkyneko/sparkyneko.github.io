@@ -612,6 +612,7 @@ class Stat {
         this.bonus_potential_return = this.potential_return / 4;
 
         this.proficiency = parseInt(details.proficiency) || 0;
+        this.mat_reduction = details.mat_reduction || false;
 
         this.finished = false;
 
@@ -633,8 +634,9 @@ class Stat {
     }
 
     getCostReduction() {
-        let percent = Math.floor(this.proficiency / 10) + Math.floor(this.proficiency / 50);
-        return 0.01 * (100 - percent);
+        let percent = 100 - (Math.floor(this.proficiency / 10) + Math.floor(this.proficiency / 50));
+        if (this.mat_reduction) percent *= 0.9;
+        return 0.01 * percent;
     }
 
     getSuccessRate() {
@@ -1084,6 +1086,7 @@ class MainApp {
 
         document.getElementById('tec').value = data.tec || 255;
         document.getElementById('proficiency').value = data.proficiency || 0;
+        document.getElementById('mat_reduction').checked = data.mat_reduction || false;
     }
 
     getNewWorkspaceId() {
@@ -1140,8 +1143,9 @@ class MainApp {
         // customize
         const tec = document.getElementById('tec').value;
         const proficiency = document.getElementById('proficiency').value;
+        const mat_reduction = document.getElementById('mat_reduction').checked || false;
 
-        this.saveSettings({tec, proficiency});
+        this.saveSettings({tec, proficiency, mat_reduction});
 
         const details = {
             weap_arm,
@@ -1149,7 +1153,8 @@ class MainApp {
             recipe_pot,
             workspace_id,
             tec,
-            proficiency
+            proficiency,
+            mat_reduction,
         };
 
         this.stats[workspace_id] = new Stat(details);
