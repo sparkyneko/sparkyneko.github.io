@@ -804,6 +804,9 @@ class Stat {
         for (const slot of this.slots) {
             if (slot.new_stat) {
                 slot.rawOverride([slot.slot_num, 0, 0]); 
+            } else {
+                slot.futureSteps = slot.currentSteps;
+                slot.futureStat = slot.currentStat;
             }
         }
     }
