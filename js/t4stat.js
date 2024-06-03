@@ -686,7 +686,7 @@ class Stat {
             display += `<br />Success Rate: ${this.getSuccessRate()}%`;
             if (this.tec !== 255) display += ` <span style="color: red; font-size: 8px">(${this.tec} TEC)</span>`
             display += `<br /><span style="color: blue; font-size: 10px">Mats: ${Object.keys(this.mats).filter(mat => this.mats[mat]).map(mat => `${this.mats[mat]} ${mat}`).join(' / ')} (Max: ${this.max_mats})</span>`;
-            
+
             let message = [];
             if (this.proficiency) message.push(`${this.proficiency} proficiency`);
             if (this.mat_reduction) message.push('10% mat reduction passive');
@@ -911,6 +911,7 @@ class Stat {
             settings: {
                 tec: this.tec,
                 proficiency: this.proficiency,
+                mat_reduction: this.mat_reduction,
                 type: this.type,
                 recipe_pot: this.recipe_pot,
                 future_pot: this.future_pot,
