@@ -513,9 +513,10 @@ class Slot {
         let penalty = 1 + (this.stat.penalty || 0);
         let step_pot = penalty * this.stat_data.pot;
         this.futureSteps = this.currentSteps;
+        let extend = this.currentSteps >= 20;
         do {
             this.runStep();
-        } while (this.stat.pot > step_pot && this.futureSteps < 20) 
+        } while (this.stat.pot > step_pot && this.futureSteps < (extend ? 28 : 20)) 
     }
 
     runStep() {

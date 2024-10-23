@@ -1,0 +1,250 @@
+
+
+<script>
+var audioCtx = new (window.AudioContext || window.webkitAudioContext || window.audioContext);
+
+
+//duration of the tone in milliseconds. Default is 500
+//frequency of the tone in hertz. default is 440
+//volume of the tone. Default is 1, off is 0.
+//type of tone. Possible values are sine, square, sawtooth, triangle, and custom. Default is sine.
+//callback to use on end of tone
+function beep(duration = 500, frequency = 440, volume = 0.5, type = "triangle", callback) {
+    var oscillator = audioCtx.createOscillator();
+    var gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    if (volume) gainNode.gain.value = volume;
+    if (frequency) oscillator.frequency.value = frequency;
+    if (type) oscillator.type = type;
+    if (callback) oscillator.onended = callback;
+    
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + (duration / 1000));
+};
+
+function play(id, duration, volume = 0.5) {
+    console.log('play', id, duration);
+    beep(duration, 440 * Math.pow(2, id / 12), volume * 0.05)
+}
+
+class Player {
+    constructor() {
+        this.tempo = 120;
+        this.channels = [
+            new Channel(1, this),
+            new Channel(2, this),
+            new Channel(3, this)
+        ],
+        this.playing = 0;
+    }
+
+    play() {
+        if (this.playing) return;
+        for (let channel of this.channels) channel.build();
+        this.playing = 3;
+        for (let channel of this.channels) channel.play();
+    }
+
+    stop() {
+        if (this.playing <= 0) return;
+        for (let channel of this.channels) channel.clear();
+        this.playing = 0;
+    }
+
+    update(id) {
+        this.channels[id].save();
+    }
+
+    load() {
+        for (let channel of this.channels) channel.load();
+    }
+}
+
+class Channel {
+    constructor(id, parent) {
+        this.sequence = [];
+        this.channel_id = 'channel_' + id;
+
+        this.parent = parent;
+
+        this.timeout = null;
+        this.temptimeout = null;
+    }
+
+    save() {
+        let mml_string = (document.getElementById(this.channel_id).value || "") + '';
+        localStorage.setItem(this.channel_id, mml_string);
+    }
+
+    load() {
+        let data = localStorage[this.channel_id] || '';
+        document.getElementById(this.channel_id).value = data;
+    }
+
+    build() {
+        this.sequence = [];
+        let length = 4;
+        let volume = 8;
+        let tempo = 120;
+        let octave = 4;
+
+        let mml_string = (document.getElementById(this.channel_id).value || "") + '';
+        console.log(this.channel_id, mml_string);
+        mml_string = mml_string.toLowerCase().replace(/[\s\b\t]/g, '');
+
+
+        function bite(string) {
+            let chunk = '';
+            do {
+                let chomp = string.charAt(0);
+                string = string.slice(1);
+                chunk += chomp;
+
+                if (!"1234567890+-#.&".includes(string[0]) || !string.length || '<>'.includes(chomp)) break;
+            } while (true)
+            return [ chunk[0], chunk.slice(1), string ];
+        }
+
+        while (mml_string.length) {
+            let cmd, value_string;
+            [cmd, value_string, mml_string] = bite(mml_string);
+            console.log(cmd, value_string);
+            let value = parseInt(value_string.replace(/[^0-9]/g, '') || 0);
+
+            switch(cmd) {
+                case 'v':
+                    if (value < 1 ) value = 1;
+                    if (value > 15) value = 15;
+                    volume = value;
+                    break;
+                case 'l':
+                    if (value < 1) value = 1;
+                    length = value;
+                    break;
+                case 't':
+                    if (value > 255 || value < 32) value = 120;
+                    this.sequence.push({ tempo: value });
+                    break;
+                case 'o':
+                    if (value > 8) value = 8;
+                    if (value < 1) value = 1;
+                    octave = value;
+                    break;
+                case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'r':
+                    if (cmd === 'r') {
+                        let dotted = value_string.includes('.');
+                        this.sequence.push({ rest: true, duration: (value || length), dotted });
+                        break;
+                    }
+                    let octave_diff = (octave - 4) * 12;
+                    let note_diff_table = {
+                        c: -9,
+                        d: -7,
+                        e: -5,
+                        f: -4,
+                        g: -2,
+                        a: 0,
+                        b: 2,
+                    };
+                    // eliminate any -s in value
+                    value = Math.abs(value);
+                    let note_diff = note_diff_table[cmd] + octave_diff;
+
+                    // sharps and flats
+                    if (value_string.includes('+') || value_string.includes('#')) note_diff++;
+                    if (value_string.includes('-')) note_diff--;
+
+                    let dotted = value_string.includes('.');
+                    let tie = value_string.includes('&');
+                    this.sequence.push({ note: note_diff, duration: (value || length), dotted, tie, volume })
+                    break;
+                case 'n':
+                    let note = value - 69; // diff from a440
+                    let dotted2 = value_string.includes('.');
+                    let tie2 = value_string.includes('&');
+
+                    this.sequence.push({ note: note_diff, duration: length, dotted: dotted2, tie: tie2, volume })
+                    break;
+                case '>':
+                    octave++;
+                    if (octave > 8) octave = 8;
+                    break;
+                case '<': 
+                    octave--;
+                    if (octave < 1) octave = 1;
+                    break;
+            }
+        }
+        console.log('load', this.channel_id);
+        console.log(this.sequence);
+    }
+
+    play() {
+        let note = this.sequence.shift();
+        if (!note) {
+            console.log(this.channel_id, 'done');
+            this.parent.playing--;
+            return;
+        }
+
+        console.log('play', this.channel_id);
+        console.log(note);
+        
+        if (note.tempo) {
+            this.parent.tempo = note.tempo;
+            this.play()
+        } else {
+            // determine how many milliseconds the note is
+            let tempo = (60000 / this.parent.tempo) * 4;
+            let wait = tempo / note.duration;
+
+            if (note.dotted) wait *= 1.5;
+            console.log('wait', wait);
+            // rest
+            if (note.rest) {
+                this.timeout = setTimeout(() => this.play(), wait);
+            } else if (note.hasOwnProperty('note')) {
+                let duration = wait + 0;
+                if (!note.tie) duration *= 0.95;
+                play(note.note, duration, note.volume);
+                this.timeout = setTimeout(() => this.play(), wait);
+            }
+
+            // changing tempo and making sure all channels catch, as it is a global tempo change.
+            let next = this.sequence[0];
+            if (next && next.tempo) this.temptimeout = setTimeout(() => {
+                this.parent.tempo = next.tempo;
+                this.sequence.shift();
+            }, wait - 1);
+        }
+
+
+    }
+
+    clear() {
+        clearTimeout(this.timeout);
+        clearTimeout(this.temptimeout);
+    }
+}
+const Parser = new Player();
+
+</script>
+
+<body onload="Parser.load()">
+    Melody<br />
+    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_1" onchange="Parser.update(0)"></textarea>
+    <br /><br />
+
+    Accompaniment 1<br />
+    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_2" onchange="Parser.update(1)"></textarea>
+    <br /><br />
+
+    Accompaniment 2<br />
+    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_3" onchange="Parser.update(2)"></textarea>
+    <br /><br />
+    <button onclick="Parser.play()">PLAY</button><button onclick="Parser.stop()">STOP</button>;
+
+</body>
