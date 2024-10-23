@@ -39,13 +39,18 @@ class Player {
             new Channel(3, this)
         ],
         this.playing = 0;
+        this.playStart = 0;
     }
 
     play() {
         if (this.playing) return;
         for (let channel of this.channels) channel.build();
         this.playing = 3;
-        for (let channel of this.channels) channel.play();
+        this.playStart = Date.now();
+        for (let channel of this.channels) {
+            channel.playTime = 0;
+            channel.play();
+        }
     }
 
     stop() {
@@ -72,6 +77,8 @@ class Channel {
 
         this.timeout = null;
         this.temptimeout = null;
+
+        this.playTime = 0;
     }
 
     save() {
@@ -206,14 +213,21 @@ class Channel {
         
         if (note.tempo) {
             this.parent.tempo = note.tempo;
-            this.play()
+            this.play();
         } else {
             // determine how many milliseconds the note is
             let tempo = (60000 / this.parent.tempo) * 4;
             let wait = tempo / note.duration;
-
             if (note.dotted) wait *= 1.5;
+
+            // re-sync by comparing to start time and the expected amount of time that should have passed.
+            let now = Date.now();
+            let played = this.playTime + this.parent.playStart;
+            this.playTime += wait;
+            let difference = now - played;
+            wait -= difference;
             console.log('wait', wait);
+
             if (muted) note.rest = true; // cheat your way around mutes;
 
             // rest
