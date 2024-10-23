@@ -193,6 +193,7 @@ class Channel {
     }
 
     play() {
+        let muted = document.getElementById(this.channel_id + 'mute').checked;
         let note = this.sequence.shift();
         if (!note) {
             console.log(this.channel_id, 'done');
@@ -213,6 +214,8 @@ class Channel {
 
             if (note.dotted) wait *= 1.5;
             console.log('wait', wait);
+            if (muted) note.rest = true; // cheat your way around mutes;
+
             // rest
             if (note.rest) {
                 this.timeout = setTimeout(() => this.play(), wait);
@@ -246,20 +249,23 @@ const Parser = new Player();
 <body onload="Parser.load()">
     <center><h2>MML composition parser (Mabinogi)</h2></center>
     <strong>Melody</strong> (<span id="channel_1count">0</span> characters)
+    <input type="checkbox" id="channel_1mute"> Mute
     <br />
     <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_1" oninput="Parser.update(0)"></textarea>
     <br /><br />
 
     <strong>Accompaniment 1</strong> (<span id="channel_2count">0</span> characters)
+    <input type="checkbox" id="channel_2mute"> Mute
     <br />
     <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_2" oninput="Parser.update(1)"></textarea>
     <br /><br />
 
     <strong>Accompaniment 2</strong> (<span id="channel_3count">0</span> characters)
+    <input type="checkbox" id="channel_3mute"> Mute
     <br />
     <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_3" oninput="Parser.update(2)"></textarea>
     <br /><br />
-    
+
     <center>
     <button onclick="Parser.play()" style="color: green; background-color: lightgreen">PLAY</button>
     <button onclick="Parser.stop()" style="color: red; background-color: pink">STOP</button>
