@@ -237,7 +237,7 @@ class Channel {
                     let dotted2 = value_string.includes('.');
                     let tie2 = value_string.includes('&');
 
-                    this.sequence.push({ note: note_diff, duration: length, dotted: dotted2, tie: tie2, volume })
+                    this.sequence.push({ note, duration: length, dotted: dotted2, tie: tie2, volume })
                     break;
                 case '>':
                     octave++;
