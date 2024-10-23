@@ -72,7 +72,7 @@ class Player {
         let headings = ['// MELODY', '// ACCOMPANIMENT 1', '// ACCOMPANIMENT 2']
         
         for (let channel of this.channels) {
-            let data = channel.compress();
+            let data = channel.grab();
             let length = data.length;
             buffer.push(...[headings.shift() + ` (${length} characters)`, data, ''])
         }
@@ -117,9 +117,12 @@ class Channel {
         document.getElementById(this.channel_id + 'count').innerHTML = clean_string.length;
     }
 
-    compress() {
+    grab() {
         let mml_string = (document.getElementById(this.channel_id).value || "") + '';
-        let clean_string = mml_string.toLowerCase().replace(/[\s\b\t]/g, '');
+        let mml_bits = mml_string.split('\n');
+        mml_bits = mml_bits.filter(line => !line.startsWith('//'));
+        let clean_string = mml_bits.join('').toLowerCase().replace(/[\s\t]/g, '');
+
         return clean_string;
         /*
         let groups = clean_string.match(/(l[0-9]+|^)((?!l[0-9]+).)+/g);
@@ -167,10 +170,7 @@ class Channel {
         let tempo = 120;
         let octave = 4;
 
-        let mml_string = (document.getElementById(this.channel_id).value || "") + '';
-        console.log(this.channel_id, mml_string);
-        mml_string = mml_string.toLowerCase().replace(/[\s\b\t]/g, '');
-
+        let mml_string = this.grab();
 
         function bite(string) {
             let chunk = '';
