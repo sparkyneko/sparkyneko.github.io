@@ -120,8 +120,8 @@ class Channel {
     compress() {
         let mml_string = (document.getElementById(this.channel_id).value || "") + '';
         let clean_string = mml_string.toLowerCase().replace(/[\s\b\t]/g, '');
-        if (!clean_string) return ''
-
+        return clean_string;
+        /*
         let groups = clean_string.match(/(l[0-9]+|^)((?!l[0-9]+).)+/g);
         console.log(groups);
         groups = groups.map(group => {
@@ -154,12 +154,16 @@ class Channel {
         });
 
         return compress2;
+    */
     }
 
     build() {
         this.sequence = [];
         let length = 4;
+        let default_dot = false;
+
         let volume = 8;
+        
         let tempo = 120;
         let octave = 4;
 
@@ -195,6 +199,8 @@ class Channel {
                 case 'l':
                     if (value < 1) value = 1;
                     length = value;
+                    if (value_string.includes('')) default_dot = true;
+                    else default_dot = false;
                     break;
                 case 't':
                     if (value > 255 || value < 32) value = 120;
@@ -230,6 +236,7 @@ class Channel {
                     if (value_string.includes('-')) note_diff--;
 
                     let dotted = value_string.includes('.');
+                    if (!value && !dotted) dotted = default_dot;  
                     let tie = value_string.includes('&');
                     this.sequence.push({ note: note_diff, duration: (value || length), dotted, tie, volume })
                     break;
@@ -238,7 +245,7 @@ class Channel {
                     let dotted2 = value_string.includes('.');
                     let tie2 = value_string.includes('&');
 
-                    this.sequence.push({ note, duration: length, dotted: dotted2, tie: tie2, volume })
+                    this.sequence.push({ note, duration: length, dotted: dotted2 || default_dot, tie: tie2, volume })
                     break;
                 case '>':
                     octave++;
