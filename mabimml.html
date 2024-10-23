@@ -163,7 +163,7 @@ class Channel {
         let default_dot = false;
 
         let volume = 8;
-        
+
         let tempo = 120;
         let octave = 4;
 
@@ -199,7 +199,7 @@ class Channel {
                 case 'l':
                     if (value < 1) value = 1;
                     length = value;
-                    if (value_string.includes('')) default_dot = true;
+                    if (value_string.includes('.')) default_dot = true;
                     else default_dot = false;
                     break;
                 case 't':
