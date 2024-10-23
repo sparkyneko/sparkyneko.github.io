@@ -75,13 +75,23 @@ class Channel {
     }
 
     save() {
+        console.log('start saving', this.channel_id)
         let mml_string = (document.getElementById(this.channel_id).value || "") + '';
         localStorage.setItem(this.channel_id, mml_string);
+
+        // update count
+        let clean_string = mml_string.toLowerCase().replace(/[\s\b\t]/g, '');
+        document.getElementById(this.channel_id + 'count').innerHTML = clean_string.length;
+        console.log('end saving', this.channel_id)
     }
 
     load() {
         let data = localStorage[this.channel_id] || '';
         document.getElementById(this.channel_id).value = data;
+
+        // update count
+        let clean_string = data.toLowerCase().replace(/[\s\b\t]/g, '');
+        document.getElementById(this.channel_id + 'count').innerHTML = clean_string.length;
     }
 
     build() {
@@ -234,17 +244,24 @@ const Parser = new Player();
 </script>
 
 <body onload="Parser.load()">
-    Melody<br />
-    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_1" onchange="Parser.update(0)"></textarea>
+    <center><h2>MML composition parser (Mabinogi)</h2></center>
+    <strong>Melody</strong> (<span id="channel_1count">0</span> characters)
+    <br />
+    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_1" oninput="Parser.update(0)"></textarea>
     <br /><br />
 
-    Accompaniment 1<br />
-    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_2" onchange="Parser.update(1)"></textarea>
+    <strong>Accompaniment 1</strong> (<span id="channel_2count">0</span> characters)
+    <br />
+    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_2" oninput="Parser.update(1)"></textarea>
     <br /><br />
 
-    Accompaniment 2<br />
-    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_3" onchange="Parser.update(2)"></textarea>
+    <strong>Accompaniment 2</strong> (<span id="channel_3count">0</span> characters)
+    <br />
+    <textarea style="width: 99%; height: 200px; overflow-y: auto;" id="channel_3" oninput="Parser.update(2)"></textarea>
     <br /><br />
-    <button onclick="Parser.play()">PLAY</button><button onclick="Parser.stop()">STOP</button>;
-
+    
+    <center>
+    <button onclick="Parser.play()" style="color: green; background-color: lightgreen">PLAY</button>
+    <button onclick="Parser.stop()" style="color: red; background-color: pink">STOP</button>
+    </center> 
 </body>
