@@ -120,6 +120,7 @@ class Channel {
     compress() {
         let mml_string = (document.getElementById(this.channel_id).value || "") + '';
         let clean_string = mml_string.toLowerCase().replace(/[\s\b\t]/g, '');
+        if (!clean_string) return ''
 
         let groups = clean_string.match(/(l[0-9]+|^)((?!l[0-9]+).)+/g);
         console.log(groups);
