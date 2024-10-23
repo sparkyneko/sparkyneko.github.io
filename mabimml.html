@@ -66,6 +66,22 @@ class Player {
     load() {
         for (let channel of this.channels) channel.load();
     }
+
+    export() {
+        let buffer = []
+        let headings = ['// MELODY', '// ACCOMPANIMENT 1', '// ACCOMPANIMENT 2']
+        
+        for (let channel of this.channels) {
+            let data = channel.compress();
+            let length = data.length;
+            buffer.push(...[headings.shift() + ` (${length} characters)`, data, ''])
+        }
+
+        let html = buffer.join('\n');
+        document.getElementById('exports').innerHTML = html;
+
+        document.getElementById("myModal").style.display = 'block';
+    }
 }
 
 class Channel {
@@ -99,6 +115,44 @@ class Channel {
         // update count
         let clean_string = data.toLowerCase().replace(/[\s\b\t]/g, '');
         document.getElementById(this.channel_id + 'count').innerHTML = clean_string.length;
+    }
+
+    compress() {
+        let mml_string = (document.getElementById(this.channel_id).value || "") + '';
+        let clean_string = mml_string.toLowerCase().replace(/[\s\b\t]/g, '');
+
+        let groups = clean_string.match(/(l[0-9]+|^)((?!l[0-9]+).)+/g);
+        console.log(groups);
+        groups = groups.map(group => {
+            let length = group.match(/l[0-9]+/g);
+            if (!length) length = 'l4';
+            else length = length[0];
+
+            return group.replace(/[abcdefgr][\+_#]?([0-9]+)[<>]*([abcdefgr][\+_#]?\1[<>]*){2,}(?![0-9])/g, match => {
+                let numbers = match.match(/[0-9]+/g);
+                if (!numbers) return match;
+
+                console.log(match);
+                console.log(numbers);
+
+                let duration = numbers[0];
+                let no_numbers = match.replace(/[0-9]/g, '');
+                let new_string = `l${duration}${no_numbers}${length}`;
+                console.log(new_string);
+
+                // replace if the new thing is shorter than what it's replacing.
+                // if (match.length < new_string.length) return match;
+                return new_string;
+            });
+        });
+        let compress1 = groups.join('');
+
+        // identify and remove un-needed length markers
+        let compress2 = compress1.replace(/l([0-9]+)([abcdefgr][+\-#]?((?!\1)[0-9]+)|[<>]*)+(l[0-9]+|$)/g, match => {
+            return match.replace(/^l[0-9]+/, '');
+        });
+
+        return compress2;
     }
 
     build() {
@@ -247,8 +301,6 @@ class Channel {
                 this.sequence.shift();
             }, wait - 1);
         }
-
-
     }
 
     clear() {
@@ -257,9 +309,41 @@ class Channel {
     }
 }
 const Parser = new Player();
-
 </script>
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        padding-top: 100px;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0,0,0);
+        background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+    }
+    .close {
+        color: #aaaaaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
 
+    .close:hover, .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>
 <body onload="Parser.load()">
     <center><h2>MML composition parser (Mabinogi)</h2></center>
     <strong>Melody</strong> (<span id="channel_1count">0</span> characters)
@@ -283,5 +367,16 @@ const Parser = new Player();
     <center>
     <button onclick="Parser.play()" style="color: green; background-color: lightgreen">PLAY</button>
     <button onclick="Parser.stop()" style="color: red; background-color: pink">STOP</button>
+    <button onclick="Parser.export()" style="color: blue; background-color: lightblue">EXPORT</button>
+
     </center> 
+
+
+    <!-- Modal content -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('myModal').style.display='none'">&times;</span>
+            <strong>Export compressed MML data</strong>
+            <textarea id="exports" style="width: 100%; height: 200px"></div>
+      </div>
 </body>
