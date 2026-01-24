@@ -71,7 +71,10 @@ function calculate() {
         if (crit_chance_o > 1) crit_chance_o = 1;
 
         let white_chance_o = (1 - crit_chance_o) * (1 - (net_bl / 100));
+        if (white_chance_o < 0) white_chance_o = 0
+
         let block_chance_o = (1 - crit_chance_o) * (net_bl / 100);
+        if (block_chance_o > 1) block_chance_o = 1
 
         let total_dmg_o = (crit_chance_o) * (cdmg / 100) + (white_chance_o) + (block_chance_o) * (blocked_damage);
 
