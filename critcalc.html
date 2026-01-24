@@ -1,33 +1,31 @@
 <script>
 
 function calculate() {
-
-    let bf = document.getElementById('bf').checked;
-    let nm = document.getElementById('nm').checked;
-    let cr = document.getElementById('cr').value;
-    let cdmg = document.getElementById('cdmg').value;
-    let br = document.getElementById('br').value;
-    let ig = document.getElementById('ig').value;
-
+    let cr = document.getElementById('cr').value; // crit rate
+    let cdmg = document.getElementById('cdmg').value; // cri tdamage
+    let br = document.getElementById('br').value; // break rate
+    let ig = document.getElementById('ig').value; // block ignoring
+    let brs = document.getElementById('brs').value; // block recovery suppression
 
     let ten = document.getElementById('ten').value;
+    let cdmgr = document.getElementById('cdmgr').value; // crit dmg reduction
     let block = document.getElementById('blk').value;
+    let brecov = document.getElementById('brecov').value; // block recovery
+    let bdr = document.getElementById('bdr').value; // block dmg reduction
 
     cr = Number(cr);
     br = Number(br);
+    ig = Number(ig);
+    brs = Number(brs);
     cdmg = 150 + Number(cdmg);
     ten = Number(ten);
     block = Number(block);
+    brecov = Number(brecov);
+    bdr = Number(bdr);
 
-    if (bf) {
-        cr += 15;
-        cdmg += 54.2;
-    }
-
-    if (nm) {
-        cdmg += 50
-        cr += 25
-    }
+    if (cdmgr) cdmg -= cdmgr;
+    if (bdr) ig -= bdr;
+    if (brs) brecov -= brs;
 
     let net_cr = cr - ten;
     let net_bl = block - br;
@@ -40,7 +38,7 @@ function calculate() {
 
     let output = '', analysis = '';
 
-    // new formula for over 100 total
+    // new formula for over 100 <strong>total</strong>
     if (net_cr + net_bl > 100) {
         // box 1
 
@@ -59,7 +57,8 @@ function calculate() {
 
         let white_chance = (1 - crit_chance) * (1 - block_rate);
         let block_chance = (1 - crit_chance) * block_rate;
-        let total_dmg = (crit_chance) * (cdmg / 100) + (white_chance) + (block_chance) * (1 - (0.5 * (1 - (ig / 100))));
+        let blocked_damage = (1 - (0.5 * (1 - (ig / 100)))) * (1 - brecov / 100)
+        let total_dmg = (crit_chance) * (cdmg / 100) + (white_chance) + (block_chance) * (blocked_damage);
 
         output += `Crit (yellow): ${(crit_chance * 100).toFixed(2)}%<br />`
         output += `Regular (white): ${(white_chance * 100).toFixed(2)}%<br />`
@@ -73,7 +72,8 @@ function calculate() {
 
         let white_chance_o = (1 - crit_chance_o) * (1 - (net_bl / 100));
         let block_chance_o = (1 - crit_chance_o) * (net_bl / 100);
-        let total_dmg_o = (crit_chance_o) * (cdmg / 100) + (white_chance_o) + (block_chance_o) * (1 - (0.5 * (1 - (ig / 100))));
+
+        let total_dmg_o = (crit_chance_o) * (cdmg / 100) + (white_chance_o) + (block_chance_o) * (blocked_damage);
 
         analysis += "As the final crit rate and final block rate have a sum greater than 100, the block rate will thus have an effect on crit rate calculations, and vice versa for block."
 
@@ -84,11 +84,11 @@ function calculate() {
         analysis += `Blocked (gray): ${(block_chance_o * 100).toFixed(2)}%<br />`;
         analysis += `Average damage: ${(total_dmg_o * 100).toFixed(2)}% of base.`
         
-        analysis += `<br /><br /> Total damage lost with new crit formula: ${((1 - (total_dmg / total_dmg_o)) * 100).toFixed(2)}%`;
+        analysis += `<br /><br /> <strong>total</strong> damage lost with new crit formula: ${((1 - (total_dmg / total_dmg_o)) * 100).toFixed(2)}%`;
         document.getElementById('results2').innerHTML = analysis + `<div style="position: absolute; top: 5px; right: 5px; font-size: 10pt; color: red;">(These calculations assume both parties are of the same level.)</div>`;
 
 
-        // old formula for under 100 total
+        // old formula for under 100 <strong>total</strong>
     } else {
 
         // box 1
@@ -103,7 +103,8 @@ function calculate() {
 
         let white_chance = (1 - crit_chance) * (1 - (net_bl / 100));
         let block_chance = (1 - crit_chance) * (net_bl / 100);
-        let total_dmg = (crit_chance) * (cdmg / 100) + (white_chance) + (block_chance) * (1 - (0.5 * (1 - (ig / 100))));
+        let blocked_damage = (1 - (0.5 * (1 - (ig / 100)))) * (1 - brecov / 100)
+        let total_dmg = (crit_chance) * (cdmg / 100) + (white_chance) + (block_chance) * (blocked_damage);
 
         output += `Crit (yellow): ${(crit_chance * 100).toFixed(2)}%<br />`
         output += `Regular (white): ${(white_chance * 100).toFixed(2)}%<br />`
@@ -119,28 +120,11 @@ function calculate() {
 }
 
 function update() {
-    let bf = document.getElementById('bf').checked;
-    let nm = document.getElementById('nm').checked;
-    let cr = document.getElementById('cr').value;
     let cdmg = document.getElementById('cdmg').value;
 
-
-    cr = Number(cr);
     cdmg = 150 + Number(cdmg);
 
-    if (bf) {
-        cr += 15;
-        cdmg += 54.2;
-    }
-
-    if (nm) {
-        cdmg += 50
-        cr += 25
-    }
-
-    document.getElementById('total_cr').innerHTML = cr;
-    document.getElementById('total_cdmg').innerHTML = cdmg;
-
+    document.getElementById('<strong>total</strong>_cdmg').innerHTML = cdmg;
     
 }
 </script>
@@ -150,35 +134,51 @@ function update() {
         <br />
         <center><h2>Crit calculator</h2></center>
         <br />
+        <div style="position: absolute; top: 5px; right: 5px; font-size: 10pt; color: red;">(These calculations assume both parties are of the same level.)</div>
         <table style="width: 100%">
             <tr>
-                <td style="border: 1px dashed black; border-radius: 10px; padding: 10px; width: 50%" rowspan=2>
+                <td style="border: 1px dashed black; border-radius: 10px; padding: 10px; width: 50%; vertical-align: top" rowspan=2>
                         <strong>Your stats:</strong><br />
-                        Critical Rate: <input id="cr" value=100 type="number" oninput="update()"></input>% <span style="color: gray">(Total: <span id="total_cr">100</span>%)</span><br />
-                        Critical Damage: <input id="cdmg" value="0" type="number" step="any" oninput="update()"></input>% <span style="color: gray">(Total: <span id="total_cdmg">150</span>%)</span><br />
-                        <input type="checkbox" id="bf" name="bf" value="Break Free" oninput="update()">Lv4 Break Free buff
-                        <input type="checkbox" id="nm" name="nm" value="NeverMiss" oninput="update()">NeverMiss buff
+                        Critical Rate: <input id="cr" value=100 type="number"></input>%<br />
+                        Critical Damage: <input id="cdmg" value="0" type="number" step="any" oninput="update()"></input>% <span style="color: gray">(<strong>total</strong>: <span id="<strong>total</strong>_cdmg">150</span>%)</span><br />
                         <br />
                         Break Rate: <input id="br" value=100 type="number" step="any"></input>%<br />
-                        Ignores Block: <input id="ig" value=0 type="number" step="any"></input>%
-
+                        Ignores Block: <input id="ig" value=0 type="number" step="any"></input>%<br />
+                        Block Recovery Suppression: <input id="brs" value=0 type="number" step="any"></input>%
                         <br /><br /><br />
                         <strong>Opponent's stats: </strong><br />
                         Crit Immunity Rate: <input id="ten" value=100 type="number" step="any"></input>%<br />
-                        Block Rate: <input id="blk" value=100 type="number" step="any"></input>%
-                        <br /><span style="font-size: 8pt; color: gray">(Lv2 Fire Echo = 8%, Lv3 Fire Echo = 16%, 4% per Holy Echo level up to 16%)</span>
+                        Crit Damage Reduction: <input id="cdmgr" value=0 type="number" step="any"></input>%<br /><br />
+                        Block Rate: <input id="blk" value=100 type="number" step="any"></input>%<br />
+                        Block Damage Reduction: <input id="bdr" value=0 type="number" step="any"></input>%<br />
+                        Block Recovery: <input id="brecov" value=0 type="number" step="any"></input>%
                         <br /><br />
 
                         <button onclick="calculate()" style="color: green; background-color: lightgreen; border: 1px solid green; padding: 5px;">Calculate!</button>
                 </td>
-                <td id="results" style="border: 1px dashed blue; border-radius: 10px; padding: 10px; position: relative;" >
+                <td id="results" style="border: 1px dashed blue; border-radius: 10px; padding: 10px; position: relative; vertical-align: top;" >
                     ...
-                    <div style="position: absolute; top: 5px; right: 5px; font-size: 10pt; color: red;">(These calculations assume both parties are of the same level.)</div>
                 </td>
             </tr>
             <tr>
-                <td id="results2" style="border: 1px dashed red; border-radius: 10px; padding: 10px;" >
+                <td id="results2" style="border: 1px dashed red; border-radius: 10px; padding: 10px; vertical-align: top;" >
                     ...
+                </td>
+            </tr>
+            <tr>
+                <td colspan=2 style="border: 1px dashed red; border-radius: 10px; padding: 10px;">
+                    <h4>Patch 1.32 Crit/Block Mechanics</h4>
+                    <strong><span style="color: orange">net_crit</span></strong> = your_crit - enemy_crit_immunity; 0 &lt; <strong><span style="color: orange">net_crit</span></strong><br />
+                    <strong><span style="color: gray">net_block</span></strong> = enemy_block - your_break; 0 &lt; <strong><span style="color: gray">net_block</span></strong><br />
+                    <strong>total</strong> = (<strong><span style="color: orange">net_crit</span></strong> + <strong><span style="color: gray">net_block</span></strong>)<br />
+<br />
+                    <strong>total</strong> &lt;= 100?<br />
+                    <strong>final_crit</strong> = <strong><span style="color: orange">net_crit</span></strong><br />
+                    <strong>final_block</strong> = <strong><span style="color: gray">net_block</span></strong><br />
+<br />
+                    <strong>total</strong> &gt; 100? <br />
+                    <strong>final_crit</strong> = <strong><span style="color: orange">net_crit</span></strong> / (<strong><span style="color: orange">net_crit</span></strong> + <strong><span style="color: gray">net_block</span></strong>)<br />
+                    <strong>final_block</strong> = <strong><span style="color: gray">net_block</span></strong> / (<strong><span style="color: orange">net_crit</span></strong> + <strong><span style="color: gray">net_block</span></strong>)<br />
                 </td>
             </tr>
         </table>
