@@ -24,8 +24,10 @@ function calculate() {
     bdr = Number(bdr);
 
     if (cdmgr) cdmg -= cdmgr;
+    if (cdmg < 100) cdmg = 100;
     if (bdr) ig -= bdr;
     if (brs) brecov -= brs;
+    if (brecov > 100) brecov = 100;
 
     let net_cr = cr - ten;
     let net_bl = block - br;
